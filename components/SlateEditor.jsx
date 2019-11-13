@@ -15,12 +15,12 @@ const initialValue = Value.fromJSON({
 				nodes: [
 					{
 						object: "text",
-						text: "A line of placeholder text in a paragraph."
-					}
-				]
-			}
-		]
-	}
+						text: "A line of placeholder text in a paragraph.",
+					},
+				],
+			},
+		],
+	},
 });
 
 // Define the default node type.
@@ -39,13 +39,13 @@ class SlateEditor extends React.Component {
 		super();
 		this.state = {
 			value: Value.fromJSON(initialValue),
-			rendered: false
+			rendered: false,
 		};
 	}
 
 	componentDidMount() {
 		this.setState({
-			rendered: true
+			rendered: true,
 		});
 	}
 
@@ -81,7 +81,7 @@ class SlateEditor extends React.Component {
 						padding: "20px",
 						background: "white",
 						color: "#333",
-						boxShadow: "0px 16px 24px 0px #A9A9A9"
+						boxShadow: "0px 16px 24px 0px #A9A9A9",
 					}}
 				>
 					<Toolbar>
@@ -115,7 +115,7 @@ class SlateEditor extends React.Component {
 							background: "#333",
 							color: "white",
 							margin: "30px 5px",
-							padding: "10px"
+							padding: "10px",
 						}}
 					>
 						{JSON.stringify(this.state, null, 2)}
@@ -151,7 +151,7 @@ class SlateEditor extends React.Component {
 
 		if (["numbered-list", "bulleted-list"].includes(type)) {
 			const {
-				value: { document, blocks }
+				value: { document, blocks },
 			} = this.state;
 
 			if (blocks.size > 0) {
@@ -175,20 +175,20 @@ class SlateEditor extends React.Component {
 		const { attributes, children, node } = props;
 
 		switch (node.type) {
-			case "block-quote":
-				return <blockquote {...attributes}>{children}</blockquote>;
-			case "bulleted-list":
-				return <ul {...attributes}>{children}</ul>;
-			case "heading-one":
-				return <h1 {...attributes}>{children}</h1>;
-			case "heading-two":
-				return <h2 {...attributes}>{children}</h2>;
-			case "list-item":
-				return <li {...attributes}>{children}</li>;
-			case "numbered-list":
-				return <ol {...attributes}>{children}</ol>;
-			default:
-				return next();
+		case "block-quote":
+			return <blockquote {...attributes}>{children}</blockquote>;
+		case "bulleted-list":
+			return <ul {...attributes}>{children}</ul>;
+		case "heading-one":
+			return <h1 {...attributes}>{children}</h1>;
+		case "heading-two":
+			return <h2 {...attributes}>{children}</h2>;
+		case "list-item":
+			return <li {...attributes}>{children}</li>;
+		case "numbered-list":
+			return <ol {...attributes}>{children}</ol>;
+		default:
+			return next();
 		}
 	};
 
@@ -197,16 +197,16 @@ class SlateEditor extends React.Component {
 		const { children, mark, attributes } = props;
 
 		switch (mark.type) {
-			case "bold":
-				return <strong {...attributes}>{children}</strong>;
-			case "code":
-				return <code {...attributes}>{children}</code>;
-			case "italic":
-				return <em {...attributes}>{children}</em>;
-			case "underlined":
-				return <u {...attributes}>{children}</u>;
-			default:
-				return next();
+		case "bold":
+			return <strong {...attributes}>{children}</strong>;
+		case "code":
+			return <code {...attributes}>{children}</code>;
+		case "italic":
+			return <em {...attributes}>{children}</em>;
+		case "underlined":
+			return <u {...attributes}>{children}</u>;
+		default:
+			return next();
 		}
 	};
 
