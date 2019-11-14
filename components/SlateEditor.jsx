@@ -31,21 +31,101 @@ const initialValue = Value.fromJSON({
 
 // The rich text example.
 class SlateEditor extends React.Component {
-	// Deserialize the initial editor value.
+
+	// Constructor
 	constructor(props) {
 		super(props);
 		this.state = {
+			// Deserialize the initial editor value.
 			value: Value.fromJSON(initialValue),
 			rendered: false,
 		};
 	}
 
+	// Side - Effects
 	componentDidMount() {
 		this.setState({
 			rendered: true,
 		});
 	}
 
+	// Functions: Event-Handlers
+	// On change, save the new `value`.
+	onChange = ({ value }) => {
+		this.setState({ value });
+	};
+
+	// On key down, if it's a formatting command toggle a mark.
+	onKeyDown = (event, editor, next) => {
+		let mark;
+		if (this.props.bold & isKeyHotkey("mod+b")(event)) {
+			mark = "bold";
+		} else if (this.props.italic & isKeyHotkey("mod+i")(event)) {
+			mark = "italic";
+		} else if (this.props.underline & isKeyHotkey("mod+u")(event)) {
+			mark = "underlined";
+		} else if (this.props.code & isKeyHotkey("mod+`")(event)) {
+			mark = "code";
+		} else {
+			return next();
+		}
+
+		event.preventDefault();
+		editor.toggleMark(mark);
+	};
+
+	// When a mark button is clicked, toggle the current mark.
+	onClickMark = (event, type) => {
+		event.preventDefault();
+		this.editor.toggleMark(type);
+	};
+
+	// When a block button is clicked, toggle the block type.
+	onClickBlock = (event, type) => {
+		event.preventDefault();
+
+		const { editor } = this;
+		const { value } = editor;
+		const { document } = value;
+
+		// Handle everything but list buttons.
+		if (type !== "bulleted-list" && type !== "numbered-list") {
+			const isActive = this.hasBlock(type);
+			const isList = this.hasBlock("list-item");
+
+			if (isList) {
+				editor
+					.setBlocks(isActive ? this.props.defaultNode : type)
+					.unwrapBlock("bulleted-list")
+					.unwrapBlock("numbered-list");
+			} else {
+				editor.setBlocks(isActive ? this.props.defaultNode : type);
+			}
+		} else {
+			// Handle the extra wrapping required for list buttons.
+			const isList = this.hasBlock("list-item");
+			const isType = value.blocks.some(block => {
+				return !!document.getClosest(block.key, parent => parent.type === type);
+			});
+
+			if (isList && isType) {
+				editor
+					.setBlocks(this.props.defaultNode)
+					.unwrapBlock("bulleted-list")
+					.unwrapBlock("numbered-list");
+			} else if (isList) {
+				editor
+					.unwrapBlock(
+						type === "bulleted-list" ? "numbered-list" : "bulleted-list"
+					)
+					.wrapBlock(type);
+			} else {
+				editor.setBlocks("list-item").wrapBlock(type);
+			}
+		}
+	};
+
+	// Functions: Checkers
 	// Check if the current selection has a mark with `type` in it.
 	hasMark = type => {
 		const { value } = this.state;
@@ -63,89 +143,12 @@ class SlateEditor extends React.Component {
 		this.editor = editor;
 	};
 
+	// Get the HTML of the Text Editor
 	createMarkup = () => {
 		return { __html: this.editor.el.innerHTML };
 	};
 
-	// Render
-	render() {
-		return (
-			<>
-				<div
-					style={{
-						maxWidth: "800px",
-						margin: "40px auto",
-						padding: "20px",
-						background: "white",
-						color: "#333",
-						boxShadow: "0px 16px 24px 0px #A9A9A9",
-					}}
-				>
-					<Toolbar>
-
-						{/* Bold */}
-						{this.props.bold && this.renderMarkButton("bold", "format_bold")}
-
-						{/* Italic */}
-						{this.props.italic && this.renderMarkButton("italic", "format_italic")}
-
-						{/* Underline */}
-						{this.props.underline && this.renderMarkButton("underlined", "format_underlined")}
-
-						{/* Code */}
-						{this.props.code && this.renderMarkButton("code", "code")}
-
-						{/* H1 */}
-						{this.props.h1 && this.renderBlockButton("heading-one", "looks_one")}
-
-						{/* H2 */}
-						{this.props.h2 && this.renderBlockButton("heading-two", "looks_two")}
-
-						{/* Blockquote */}
-						{this.props.blockquote && this.renderBlockButton("block-quote", "format_quote")}
-
-						{/* Ordered List */}
-						{this.props.ol && this.renderBlockButton("numbered-list", "format_list_numbered")}
-
-						{/* Unordered List */}
-						{this.props.ul && this.renderBlockButton("bulleted-list", "format_list_bulleted")}
-					</Toolbar>
-					<Editor
-						spellCheck
-						autoFocus
-						placeholder="Enter some rich text..."
-						ref={this.ref}
-						value={this.state.value}
-						onChange={this.onChange}
-						onKeyDown={this.onKeyDown}
-						renderBlock={this.renderBlock}
-						renderMark={this.renderMark}
-						style={{ border: "1px solid grey", minHeight: "60px" }}
-					/>
-				</div>
-				<div>
-					<p>State (JSON object):</p>
-					<pre
-						style={{
-							background: "#333",
-							color: "white",
-							margin: "30px 5px",
-							padding: "10px",
-						}}
-					>
-						{JSON.stringify(this.state, null, 2)}
-					</pre>
-				</div>
-				{this.state.rendered ? (
-					<>
-						<p>HTML:</p>
-						<div dangerouslySetInnerHTML={this.createMarkup()}></div>
-					</>
-				) : null}
-			</>
-		);
-	}
-
+	// Render Helpers
 	// Render a mark-toggling toolbar button.
 	renderMarkButton = (type, icon) => {
 		const isActive = this.hasMark(type);
@@ -225,80 +228,83 @@ class SlateEditor extends React.Component {
 		}
 	};
 
-	// On change, save the new `value`.
-	onChange = ({ value }) => {
-		this.setState({ value });
-	};
+	// Main Render
+	render() {
+		return (
+			<>
+				<div
+					style={{
+						maxWidth: "800px",
+						margin: "40px auto",
+						padding: "20px",
+						background: "white",
+						color: "#333",
+						boxShadow: "0px 16px 24px 0px #A9A9A9",
+					}}
+				>
+					<Toolbar>
+						{/* Bold */}
+						{this.props.bold && this.renderMarkButton("bold", "format_bold")}
 
-	// On key down, if it's a formatting command toggle a mark.
-	onKeyDown = (event, editor, next) => {
-		let mark;
-		if (this.props.bold & isKeyHotkey("mod+b")(event)) {
-			mark = "bold";
-		} else if (this.props.italic & isKeyHotkey("mod+i")(event)) {
-			mark = "italic";
-		} else if (this.props.underline & isKeyHotkey("mod+u")(event)) {
-			mark = "underlined";
-		} else if (this.props.code & isKeyHotkey("mod+`")(event)) {
-			mark = "code";
-		} else {
-			return next();
-		}
+						{/* Italic */}
+						{this.props.italic && this.renderMarkButton("italic", "format_italic")}
 
-		event.preventDefault();
-		editor.toggleMark(mark);
-	};
+						{/* Underline */}
+						{this.props.underline && this.renderMarkButton("underlined", "format_underlined")}
 
-	// When a mark button is clicked, toggle the current mark.
-	onClickMark = (event, type) => {
-		event.preventDefault();
-		this.editor.toggleMark(type);
-	};
+						{/* Code */}
+						{this.props.code && this.renderMarkButton("code", "code")}
 
-	// When a block button is clicked, toggle the block type.
-	onClickBlock = (event, type) => {
-		event.preventDefault();
+						{/* H1 */}
+						{this.props.h1 && this.renderBlockButton("heading-one", "looks_one")}
 
-		const { editor } = this;
-		const { value } = editor;
-		const { document } = value;
+						{/* H2 */}
+						{this.props.h2 && this.renderBlockButton("heading-two", "looks_two")}
 
-		// Handle everything but list buttons.
-		if (type !== "bulleted-list" && type !== "numbered-list") {
-			const isActive = this.hasBlock(type);
-			const isList = this.hasBlock("list-item");
+						{/* Blockquote */}
+						{this.props.blockquote && this.renderBlockButton("block-quote", "format_quote")}
 
-			if (isList) {
-				editor
-					.setBlocks(isActive ? this.props.defaultNode : type)
-					.unwrapBlock("bulleted-list")
-					.unwrapBlock("numbered-list");
-			} else {
-				editor.setBlocks(isActive ? this.props.defaultNode : type);
-			}
-		} else {
-			// Handle the extra wrapping required for list buttons.
-			const isList = this.hasBlock("list-item");
-			const isType = value.blocks.some(block => {
-				return !!document.getClosest(block.key, parent => parent.type === type);
-			});
+						{/* Ordered List */}
+						{this.props.ol && this.renderBlockButton("numbered-list", "format_list_numbered")}
 
-			if (isList && isType) {
-				editor
-					.setBlocks(this.props.defaultNode)
-					.unwrapBlock("bulleted-list")
-					.unwrapBlock("numbered-list");
-			} else if (isList) {
-				editor
-					.unwrapBlock(
-						type === "bulleted-list" ? "numbered-list" : "bulleted-list"
-					)
-					.wrapBlock(type);
-			} else {
-				editor.setBlocks("list-item").wrapBlock(type);
-			}
-		}
-	};
+						{/* Unordered List */}
+						{this.props.ul && this.renderBlockButton("bulleted-list", "format_list_bulleted")}
+					</Toolbar>
+					<Editor
+						spellCheck
+						autoFocus
+						placeholder="Enter some rich text..."
+						ref={this.ref}
+						value={this.state.value}
+						onChange={this.onChange}
+						onKeyDown={this.onKeyDown}
+						renderBlock={this.renderBlock}
+						renderMark={this.renderMark}
+						style={{ border: "1px solid grey", minHeight: "60px" }}
+					/>
+				</div>
+				<div>
+					<p>State (JSON object):</p>
+					<pre
+						style={{
+							background: "#333",
+							color: "white",
+							margin: "30px 5px",
+							padding: "10px",
+						}}
+					>
+						{JSON.stringify(this.state, null, 2)}
+					</pre>
+				</div>
+				{this.state.rendered ? (
+					<>
+						<p>HTML:</p>
+						<div dangerouslySetInnerHTML={this.createMarkup()}></div>
+					</>
+				) : null}
+			</>
+		);
+	}
 }
 
 SlateEditor.defaultProps = {
