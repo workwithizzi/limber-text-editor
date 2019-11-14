@@ -1,9 +1,15 @@
 import React from "react";
 import { Editor } from "slate-react";
-import { Value } from "slate";
+import { KeyUtils, Value } from "slate";
 import { isKeyHotkey } from "is-hotkey";
+import PropTypes from "prop-types";
 
-import { Button, Toolbar } from "./slatetools";
+import Button from "./Button";
+import Toolbar from "./Toolbar";
+
+// Resets Slate's internal key generating function to its default state.
+// See: https://github.com/ianstormtaylor/slate/blob/master/docs/reference/slate/utils.md
+KeyUtils.resetGenerator();
 
 // Create our initial value...
 const initialValue = Value.fromJSON({
@@ -23,20 +29,11 @@ const initialValue = Value.fromJSON({
 	},
 });
 
-// Define the default node type.
-const DEFAULT_NODE = "paragraph";
-
-// Define hotkey matchers.
-const isBoldHotkey = isKeyHotkey("mod+b");
-const isItalicHotkey = isKeyHotkey("mod+i");
-const isUnderlinedHotkey = isKeyHotkey("mod+u");
-const isCodeHotkey = isKeyHotkey("mod+`");
-
 // The rich text example.
 class SlateEditor extends React.Component {
 	// Deserialize the initial editor value.
-	constructor() {
-		super();
+	constructor(props) {
+		super(props);
 		this.state = {
 			value: Value.fromJSON(initialValue),
 			rendered: false,
@@ -85,15 +82,33 @@ class SlateEditor extends React.Component {
 					}}
 				>
 					<Toolbar>
-						{this.renderMarkButton("bold", "format_bold")}
-						{this.renderMarkButton("italic", "format_italic")}
-						{this.renderMarkButton("underlined", "format_underlined")}
-						{this.renderMarkButton("code", "code")}
-						{this.renderBlockButton("heading-one", "looks_one")}
-						{this.renderBlockButton("heading-two", "looks_two")}
-						{this.renderBlockButton("block-quote", "format_quote")}
-						{this.renderBlockButton("numbered-list", "format_list_numbered")}
-						{this.renderBlockButton("bulleted-list", "format_list_bulleted")}
+
+						{/* Bold */}
+						{this.props.bold && this.renderMarkButton("bold", "format_bold")}
+
+						{/* Italic */}
+						{this.props.italic && this.renderMarkButton("italic", "format_italic")}
+
+						{/* Underline */}
+						{this.props.underline && this.renderMarkButton("underlined", "format_underlined")}
+
+						{/* Code */}
+						{this.props.code && this.renderMarkButton("code", "code")}
+
+						{/* H1 */}
+						{this.props.h1 && this.renderBlockButton("heading-one", "looks_one")}
+
+						{/* H2 */}
+						{this.props.h2 && this.renderBlockButton("heading-two", "looks_two")}
+
+						{/* Blockquote */}
+						{this.props.blockquote && this.renderBlockButton("block-quote", "format_quote")}
+
+						{/* Ordered List */}
+						{this.props.ol && this.renderBlockButton("numbered-list", "format_list_numbered")}
+
+						{/* Unordered List */}
+						{this.props.ul && this.renderBlockButton("bulleted-list", "format_list_bulleted")}
 					</Toolbar>
 					<Editor
 						spellCheck
@@ -218,14 +233,13 @@ class SlateEditor extends React.Component {
 	// On key down, if it's a formatting command toggle a mark.
 	onKeyDown = (event, editor, next) => {
 		let mark;
-
-		if (isBoldHotkey(event)) {
+		if (this.props.bold & isKeyHotkey("mod+b")(event)) {
 			mark = "bold";
-		} else if (isItalicHotkey(event)) {
+		} else if (this.props.italic & isKeyHotkey("mod+i")(event)) {
 			mark = "italic";
-		} else if (isUnderlinedHotkey(event)) {
+		} else if (this.props.underline & isKeyHotkey("mod+u")(event)) {
 			mark = "underlined";
-		} else if (isCodeHotkey(event)) {
+		} else if (this.props.code & isKeyHotkey("mod+`")(event)) {
 			mark = "code";
 		} else {
 			return next();
@@ -256,11 +270,11 @@ class SlateEditor extends React.Component {
 
 			if (isList) {
 				editor
-					.setBlocks(isActive ? DEFAULT_NODE : type)
+					.setBlocks(isActive ? this.props.defaultNode : type)
 					.unwrapBlock("bulleted-list")
 					.unwrapBlock("numbered-list");
 			} else {
-				editor.setBlocks(isActive ? DEFAULT_NODE : type);
+				editor.setBlocks(isActive ? this.props.defaultNode : type);
 			}
 		} else {
 			// Handle the extra wrapping required for list buttons.
@@ -271,7 +285,7 @@ class SlateEditor extends React.Component {
 
 			if (isList && isType) {
 				editor
-					.setBlocks(DEFAULT_NODE)
+					.setBlocks(this.props.defaultNode)
 					.unwrapBlock("bulleted-list")
 					.unwrapBlock("numbered-list");
 			} else if (isList) {
@@ -287,4 +301,31 @@ class SlateEditor extends React.Component {
 	};
 }
 
-export { SlateEditor };
+SlateEditor.defaultProps = {
+	// Formats
+	bold: false,
+	italic: false,
+	underline: false,
+	code: false,
+	h1: false,
+	h2: false,
+	blockquote: false,
+	ol: false,
+	ul: false,
+};
+
+SlateEditor.propTypes = {
+	defaultNode: PropTypes.string.isRequired,
+	// Formats
+	bold: PropTypes.bool,
+	italic: PropTypes.bool,
+	underline: PropTypes.bool,
+	code: PropTypes.bool,
+	h1: PropTypes.bool,
+	h2: PropTypes.bool,
+	blockquote: PropTypes.bool,
+	ol: PropTypes.bool,
+	ul: PropTypes.bool,
+};
+
+export default SlateEditor;
