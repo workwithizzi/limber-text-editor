@@ -281,6 +281,18 @@ class SlateEditor extends React.Component {
 						{/* H6 */}
 						{this.props.h5 && this.renderBlockButton("heading-six", "looks_6")}
 
+						{/* Headings*/}
+						{this.props.headings && (
+							<>
+								{this.renderBlockButton("heading-one", "looks_one")}
+								{this.renderBlockButton("heading-two", "looks_two")}
+								{this.renderBlockButton("heading-three", "looks_3")}
+								{this.renderBlockButton("heading-four", "looks_4")}
+								{this.renderBlockButton("heading-five", "looks_5")}
+								{this.renderBlockButton("heading-six", "looks_6")}
+							</>
+						)}
+
 						{/* Blockquote */}
 						{this.props.blockquote && this.renderBlockButton("block-quote", "format_quote")}
 
@@ -339,6 +351,7 @@ SlateEditor.defaultProps = {
 	h4: false,
 	h5: false,
 	h6: false,
+	headings: false,
 	blockquote: false,
 	ol: false,
 	ul: false,
@@ -357,6 +370,7 @@ SlateEditor.propTypes = {
 	h4: PropTypes.bool,
 	h5: PropTypes.bool,
 	h6: PropTypes.bool,
+	headings: PropTypes.bool,
 	blockquote: PropTypes.bool,
 	ol: PropTypes.bool,
 	ul: PropTypes.bool,

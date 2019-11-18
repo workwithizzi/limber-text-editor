@@ -18,12 +18,20 @@ function Home() {
 				italic: boolean that defines whether Italic format support should be added.
 				underline: boolean that defines whether Underline format support should be added.
 				code: boolean that defines whether Code format support should be added.
-				h1: boolean that defines whether H1 format support should be added.
-				h2: boolean that defines whether H2 format support should be added.
-				h3: boolean that defines whether H3 format support should be added.
-				h4: boolean that defines whether H4 format support should be added.
-				h5: boolean that defines whether H5 format support should be added.
-				h6: boolean that defines whether H6 format support should be added.
+
+				{
+					h1: boolean that defines whether H1 format support should be added.
+					h2: boolean that defines whether H2 format support should be added.
+					h3: boolean that defines whether H3 format support should be added.
+					h4: boolean that defines whether H4 format support should be added.
+					h5: boolean that defines whether H5 format support should be added.
+					h6: boolean that defines whether H6 format support should be added.
+				}
+					alternatively if there's a need to pass all the headings from h1 to h6, for simplicity reasons, pass "headings" prop
+				{
+					headings: boolean that defines that all H1-H6 formats should be added.
+				}
+
 				blockquote: boolean that defines whether Blockquote format support should be added.
 				ol: boolean that defines whether Ordered List format should be added.
 				ul: boolean that defines whether Unordered List format should be added.
@@ -35,12 +43,7 @@ function Home() {
 				italic
 				underline
 				code
-				h1
-				h2
-				h3
-				h4
-				h5
-				h6
+				headings
 				blockquote
 				ol
 				ul
