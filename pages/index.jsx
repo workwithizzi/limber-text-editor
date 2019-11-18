@@ -22,6 +22,7 @@ function Home() {
 				h2: boolean that defines whether H2 format support should be added.
 				h3: boolean that defines whether H3 format support should be added.
 				h4: boolean that defines whether H4 format support should be added.
+				h5: boolean that defines whether H5 format support should be added.
 				blockquote: boolean that defines whether Blockquote format support should be added.
 				ol: boolean that defines whether Ordered List format should be added.
 				ul: boolean that defines whether Unordered List format should be added.
@@ -37,6 +38,7 @@ function Home() {
 				h2
 				h3
 				h4
+				h5
 				blockquote
 				ol
 				ul
