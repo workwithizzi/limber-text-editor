@@ -20,6 +20,7 @@ function Home() {
 				code: boolean that defines whether Code format support should be added.
 				h1: boolean that defines whether H1 format support should be added.
 				h2: boolean that defines whether H2 format support should be added.
+				h3: boolean that defines whether H3 format support should be added.
 				blockquote: boolean that defines whether Blockquote format support should be added.
 				ol: boolean that defines whether Ordered List format should be added.
 				ul: boolean that defines whether Unordered List format should be added.
@@ -33,6 +34,7 @@ function Home() {
 				code
 				h1
 				h2
+				h3
 				blockquote
 				ol
 				ul
