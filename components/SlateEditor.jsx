@@ -207,6 +207,8 @@ class SlateEditor extends React.Component {
 			return <h4 {...attributes}>{children}</h4>;
 		case "heading-five":
 			return <h5 {...attributes}>{children}</h5>;
+		case "heading-six":
+			return <h6 {...attributes}>{children}</h6>;
 		case "list-item":
 			return <li {...attributes}>{children}</li>;
 		case "numbered-list":
@@ -276,6 +278,9 @@ class SlateEditor extends React.Component {
 						{/* H5 */}
 						{this.props.h5 && this.renderBlockButton("heading-five", "looks_5")}
 
+						{/* H6 */}
+						{this.props.h5 && this.renderBlockButton("heading-six", "looks_6")}
+
 						{/* Blockquote */}
 						{this.props.blockquote && this.renderBlockButton("block-quote", "format_quote")}
 
@@ -333,6 +338,7 @@ SlateEditor.defaultProps = {
 	h3: false,
 	h4: false,
 	h5: false,
+	h6: false,
 	blockquote: false,
 	ol: false,
 	ul: false,
@@ -350,6 +356,7 @@ SlateEditor.propTypes = {
 	h3: PropTypes.bool,
 	h4: PropTypes.bool,
 	h5: PropTypes.bool,
+	h6: PropTypes.bool,
 	blockquote: PropTypes.bool,
 	ol: PropTypes.bool,
 	ul: PropTypes.bool,
