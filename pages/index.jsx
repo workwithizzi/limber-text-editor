@@ -35,7 +35,7 @@ function Home() {
 				blockquote: boolean that defines whether Blockquote format support should be added.
 				ol: boolean that defines whether Ordered List format should be added.
 				ul: boolean that defines whether Unordered List format should be added.
-				textAlign: array of options ["left", "center", "right"] that defines whether text-align format should be added.
+				textAlign: array of options ["left", "center", "right"] || single string: "left", "right", "center", that defines whether text-align format should be added.
 			*/}
 
 			<SlateEditor
@@ -48,6 +48,7 @@ function Home() {
 				blockquote
 				ol
 				ul
+				// textAlign="right"
 				textAlign={["left", "center", "right" ]}
 			/>
 		</>
