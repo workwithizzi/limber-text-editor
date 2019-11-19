@@ -138,6 +138,40 @@ class SlateEditor extends React.Component {
 		return value.blocks.some(node => node.type === type);
 	};
 
+	// Check if the any of the currently selected blocks are of data `align`
+	hasAlign = align => {
+		const { value } = this.state;
+		return value.blocks.some(node => node.data.get("align") === align);
+	}
+
+	onClickAlign = align => {
+		if (this.hasAlign(align)) {
+			return this.editor.setBlocks({
+				data: {},
+			}).focus();
+		}
+		return this.editor.setBlocks({
+			data: { align },
+		}).focus();
+	}
+
+	renderAlignButton = (type, icon) => {
+		const isActive = this.hasAlign(type);
+		return (
+			<Button
+				key={type}
+				active={isActive}
+				onMouseDown={() => this.onClickAlign(type)}
+			>
+				{icon}
+			</Button>
+		);
+	}
+
+
+	// Check what align options are passed
+	hasMultipleAligns = alignProp => Array.isArray(alignProp);
+
 	// Store a reference to the `editor`.
 	ref = editor => {
 		this.editor = editor;
@@ -191,28 +225,34 @@ class SlateEditor extends React.Component {
 	// Render a Slate block
 	renderBlock = (props, editor, next) => {
 		const { attributes, children, node } = props;
+		let align = node.data.get("align");
+		if (!align) {
+			align = "left";
+		}
 
 		switch (node.type) {
+		case "paragraph":
+			return <p {...attributes} style={{ textAlign: `${align}`}}>{children}</p>;
 		case "block-quote":
-			return <blockquote {...attributes}>{children}</blockquote>;
+			return <blockquote {...attributes} style={{ textAlign: `${align}`}}>{children}</blockquote>;
 		case "bulleted-list":
-			return <ul {...attributes}>{children}</ul>;
+			return <ul {...attributes} style={{ textAlign: `${align}`}}>{children}</ul>;
 		case "heading-one":
-			return <h1 {...attributes}>{children}</h1>;
+			return <h1 {...attributes} style={{ textAlign: `${align}`}}>{children}</h1>;
 		case "heading-two":
-			return <h2 {...attributes}>{children}</h2>;
+			return <h2 {...attributes} style={{ textAlign: `${align}`}}>{children}</h2>;
 		case "heading-three":
-			return <h3 {...attributes}>{children}</h3>;
+			return <h3 {...attributes} style={{ textAlign: `${align}`}}>{children}</h3>;
 		case "heading-four":
-			return <h4 {...attributes}>{children}</h4>;
+			return <h4 {...attributes} style={{ textAlign: `${align}`}}>{children}</h4>;
 		case "heading-five":
-			return <h5 {...attributes}>{children}</h5>;
+			return <h5 {...attributes} style={{ textAlign: `${align}`}}>{children}</h5>;
 		case "heading-six":
-			return <h6 {...attributes}>{children}</h6>;
+			return <h6 {...attributes} style={{ textAlign: `${align}`}}>{children}</h6>;
 		case "list-item":
-			return <li {...attributes}>{children}</li>;
+			return <li {...attributes} style={{ textAlign: `${align}`}}>{children}</li>;
 		case "numbered-list":
-			return <ol {...attributes}>{children}</ol>;
+			return <ol {...attributes} style={{ textAlign: `${align}`}}>{children}</ol>;
 		default:
 			return next();
 		}
@@ -221,7 +261,6 @@ class SlateEditor extends React.Component {
 	// Render a Slate mark
 	renderMark = (props, editor, next) => {
 		const { children, mark, attributes } = props;
-
 		switch (mark.type) {
 		case "bold":
 			return <strong {...attributes}>{children}</strong>;
@@ -235,6 +274,12 @@ class SlateEditor extends React.Component {
 			return next();
 		}
 	};
+
+	renderAlignButtons = () => {
+		return this.props.textAlign.map(align =>
+			this.renderAlignButton(align, `format_align_${align}`)
+		);
+	}
 
 	// Main Render
 	render() {
@@ -292,6 +337,12 @@ class SlateEditor extends React.Component {
 								{this.renderBlockButton("heading-six", "looks_6")}
 							</>
 						)}
+
+						{/* Text-Align */}
+						{this.hasMultipleAligns(this.props.textAlign) ?
+							this.renderAlignButtons() :
+							this.renderAlignButton(this.props.textAlign, `format_align_${this.props.textAlign}`)
+						}
 
 						{/* Blockquote */}
 						{this.props.blockquote && this.renderBlockButton("block-quote", "format_quote")}
@@ -355,6 +406,7 @@ SlateEditor.defaultProps = {
 	blockquote: false,
 	ol: false,
 	ul: false,
+	textAlign: null,
 };
 
 SlateEditor.propTypes = {
@@ -374,6 +426,10 @@ SlateEditor.propTypes = {
 	blockquote: PropTypes.bool,
 	ol: PropTypes.bool,
 	ul: PropTypes.bool,
+	textAlign: PropTypes.oneOfType([
+		PropTypes.arrayOf(PropTypes.string),
+		PropTypes.string,
+	]),
 };
 
 export default SlateEditor;
