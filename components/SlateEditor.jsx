@@ -145,12 +145,21 @@ class SlateEditor extends React.Component {
 	}
 
 	onClickAlign = align => {
+
+		const { editor } = this;
+
+		// This is related to the editing state of the block accessed by a key (for example, when we are at the children block right now, but we need to change parent block state, etc)
+		// https://docs.slatejs.org/slate-core/commands#setnodebykey-path
+		// editor.setNodeByKey("4", {
+		// 	data: { align },
+		// });
+
 		if (this.hasAlign(align)) {
-			return this.editor.setBlocks({
+			return editor.setBlocks({
 				data: {},
 			}).focus();
 		}
-		return this.editor.setBlocks({
+		return editor.setBlocks({
 			data: { align },
 		}).focus();
 	}
@@ -167,7 +176,6 @@ class SlateEditor extends React.Component {
 			</Button>
 		);
 	}
-
 
 	// Check what align options are passed
 	hasMultipleAligns = alignProp => Array.isArray(alignProp);
@@ -226,17 +234,18 @@ class SlateEditor extends React.Component {
 	renderBlock = (props, editor, next) => {
 		const { attributes, children, node } = props;
 		let align = node.data.get("align");
+		// Reset the align onClick on the currently active button
 		if (!align) {
 			align = "left";
 		}
 
 		switch (node.type) {
 		case "paragraph":
-			return <p {...attributes} style={{ textAlign: `${align}`}}>{children}</p>;
+			return <p {...attributes} style={{ textAlign: this.props.textAlign && `${align}`}}>{children}</p>;
 		case "block-quote":
 			return <blockquote {...attributes} style={{ textAlign: `${align}`}}>{children}</blockquote>;
 		case "bulleted-list":
-			return <ul {...attributes} style={{ textAlign: `${align}`}}>{children}</ul>;
+			return <ul {...attributes} style={{ listStylePosition: "inside" }}>{children}</ul>;
 		case "heading-one":
 			return <h1 {...attributes} style={{ textAlign: `${align}`}}>{children}</h1>;
 		case "heading-two":
@@ -252,7 +261,7 @@ class SlateEditor extends React.Component {
 		case "list-item":
 			return <li {...attributes} style={{ textAlign: `${align}`}}>{children}</li>;
 		case "numbered-list":
-			return <ol {...attributes} style={{ textAlign: `${align}`}}>{children}</ol>;
+			return <ol {...attributes} style={{ listStylePosition: "inside" }}>{children}</ol>;
 		default:
 			return next();
 		}
@@ -339,9 +348,10 @@ class SlateEditor extends React.Component {
 						)}
 
 						{/* Text-Align */}
-						{this.hasMultipleAligns(this.props.textAlign) ?
-							this.renderAlignButtons() :
-							this.renderAlignButton(this.props.textAlign, `format_align_${this.props.textAlign}`)
+						{this.props.textAlign &&
+							(this.hasMultipleAligns(this.props.textAlign) ?
+								this.renderAlignButtons() :
+								this.renderAlignButton(this.props.textAlign, `format_align_${this.props.textAlign}`))
 						}
 
 						{/* Blockquote */}
