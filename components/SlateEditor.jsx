@@ -1,7 +1,8 @@
 import React from "react";
-import { Editor } from "slate-react";
+import { Editor, getEventTransfer } from "slate-react";
 import { KeyUtils, Value } from "slate";
 import { isKeyHotkey } from "is-hotkey";
+import isUrl from "is-url";
 import PropTypes from "prop-types";
 
 import Button from "./Button";
@@ -54,6 +55,29 @@ class SlateEditor extends React.Component {
 	onChange = ({ value }) => {
 		this.setState({ value });
 	};
+
+	/**
+	 * On paste, if the text is a link, wrap the selection in a link.
+	 *
+	 * @param {Event} event
+	 * @param {Editor} editor
+	 * @param {Function} next
+	 */
+
+	onPaste = (event, editor, next) => {
+		if (editor.value.selection.isCollapsed) return next();
+
+		const transfer = getEventTransfer(event);
+		const { type, text } = transfer;
+		if (type !== "text" && type !== "html") return next();
+		if (!isUrl(text)) return next();
+
+		if (this.hasLinks()) {
+			this.unwrapLink(editor);
+		}
+
+		this.wrapLink(editor, text);
+	}
 
 	// On key down, if it's a formatting command toggle a mark.
 	onKeyDown = (event, editor, next) => {
@@ -144,6 +168,43 @@ class SlateEditor extends React.Component {
 		return value.blocks.some(node => node.data.get("align") === align);
 	}
 
+	/**
+	 * Check whether the current selection has a link in it.
+	 *
+	 * @return {Boolean} hasLinks
+	 */
+
+	hasLinks = () => {
+		const { value } = this.state;
+		return value.inlines.some(inline => inline.type === "link");
+	}
+
+	/**
+ * A change helper to standardize wrapping links.
+ *
+ * @param {Editor} editor
+ * @param {String} href
+ */
+
+	wrapLink = (editor, href) => {
+		editor.wrapInline({
+			type: "link",
+			data: { href },
+		});
+
+		editor.moveToEnd();
+	}
+
+	/**
+ * A change helper to standardize unwrapping links.
+ *
+ * @param {Editor} editor
+ */
+
+	unwrapLink = (editor) => {
+		editor.unwrapInline("link");
+	}
+
 	onClickAlign = align => {
 
 		const { editor } = this;
@@ -162,6 +223,50 @@ class SlateEditor extends React.Component {
 		return editor.setBlocks({
 			data: { align },
 		}).focus();
+	}
+
+	/**
+	 * When clicking a link, if the selection has a link in it, remove the link.
+	 * Otherwise, add a new link with an href and text.
+	 *
+	 * @param {Event} event
+	 */
+
+	onClickLink = event => {
+		event.preventDefault();
+
+		const { editor } = this;
+		const { value } = editor;
+		const hasLinks = this.hasLinks();
+
+		if (hasLinks) {
+			this.unwrapLink(editor);
+		} else if (value.selection.isExpanded) {
+			const href = window.prompt("Enter the URL of the link:");
+
+			if (href == null) {
+				return;
+			}
+
+			this.wrapLink(editor, href);
+		} else {
+			const href = window.prompt("Enter the URL of the link:");
+
+			if (href == null) {
+				return;
+			}
+
+			const text = window.prompt("Enter the text for the link:");
+
+			if (text == null) {
+				return;
+			}
+
+			editor
+				.insertText(text)
+				.moveFocusBackward(text.length)
+				.command(this.wrapLink, href);
+		}
 	}
 
 	renderAlignButton = (type, icon) => {
@@ -230,6 +335,18 @@ class SlateEditor extends React.Component {
 		);
 	};
 
+	renderInlineButton = icon => {
+		const isActive = this.hasLinks();
+		return (
+			<Button
+				active={isActive}
+				onMouseDown={this.onClickLink}
+			>
+				{icon}
+			</Button>
+		);
+	}
+
 	// Render a Slate block
 	renderBlock = (props, editor, next) => {
 		const { attributes, children, node } = props;
@@ -283,6 +400,34 @@ class SlateEditor extends React.Component {
 			return next();
 		}
 	};
+
+	/**
+	 * Render a Slate inline.
+	 *
+	 * @param {Object} props
+	 * @param {Editor} editor
+	 * @param {Function} next
+	 * @return {Element}
+	 */
+
+	renderInline = (props, editor, next) => {
+		const { attributes, children, node } = props;
+
+		switch (node.type) {
+		case "link": {
+			const { data } = node;
+			const href = data.get("href");
+			return (
+				<a {...attributes} href={href}>
+					{children}
+				</a>
+			);
+		}
+		default: {
+			return next();
+		}
+		}
+	}
 
 	renderAlignButtons = () => {
 		return this.props.textAlign.map(align =>
@@ -362,6 +507,8 @@ class SlateEditor extends React.Component {
 
 						{/* Unordered List */}
 						{this.props.ul && this.renderBlockButton("bulleted-list", "format_list_bulleted")}
+
+						{this.props.link && this.renderInlineButton("link")}
 					</Toolbar>
 					<Editor
 						spellCheck
@@ -371,8 +518,10 @@ class SlateEditor extends React.Component {
 						value={this.state.value}
 						onChange={this.onChange}
 						onKeyDown={this.onKeyDown}
+						onPaste={this.onPaste}
 						renderBlock={this.renderBlock}
 						renderMark={this.renderMark}
+						renderInline={this.renderInline}
 						style={{ border: "1px solid grey", minHeight: "60px" }}
 					/>
 				</div>
@@ -417,6 +566,7 @@ SlateEditor.defaultProps = {
 	ol: false,
 	ul: false,
 	textAlign: null,
+	link: false,
 };
 
 SlateEditor.propTypes = {
@@ -440,6 +590,7 @@ SlateEditor.propTypes = {
 		PropTypes.arrayOf(PropTypes.string),
 		PropTypes.string,
 	]),
+	link: PropTypes.bool,
 };
 
 export default SlateEditor;
