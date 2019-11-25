@@ -40,6 +40,8 @@ class SlateEditor extends React.Component {
 			// Deserialize the initial editor value.
 			value: Value.fromJSON(initialValue),
 			rendered: false,
+			x: null,
+			y: null,
 		};
 	}
 
@@ -177,6 +179,57 @@ class SlateEditor extends React.Component {
 	hasLinks = () => {
 		const { value } = this.state;
 		return value.inlines.some(inline => inline.type === "link");
+	}
+
+	removeUrl = () => {
+		const { editor } = this;
+		if (this.hasLinks()) {
+			this.unwrapLink(editor);
+		}
+		
+	}
+
+	editLink = () => {
+		const { editor } = this;
+
+		const { value } = this.state;
+		let currentHref = "";
+
+		if (this.hasLinks()) {
+			value.inlines.some(inline => {
+				currentHref = inline.data.get("href");
+			});
+			const href = window.prompt("Enter the URL of the link:", currentHref);
+			editor
+				.setInlines({
+					type: "link",
+					data: { href },
+				});
+			
+		}
+	}
+
+	renderDialog = () => {
+		const { editor } = this;
+		const { value } = this.state;
+		if (value.inlines.some(inline => inline.type === "link")) {
+			// get url value
+			let href = "";
+			value.inlines.some(inline => {
+				href = inline.data.get("href");
+			});
+
+			const top = this.state.y;
+			const left = this.state.x;
+
+			// display toaster a bit below the href as at Quill.
+			return <div style={{ position: "relative", top: `${top}px`, left: `${left}px`, backgroundColor: "grey"}}>
+				<span>Visit URL:</span>
+				<a href={href}>{href}</a>
+				<button onClick={this.editLink}>Edit</button>
+				<button onClick={this.removeUrl}>Remove</button>
+			</div>;
+		}
 	}
 
 	/**
@@ -410,6 +463,10 @@ class SlateEditor extends React.Component {
 	 * @return {Element}
 	 */
 
+	onMouseClick = e => {
+		this.setState({ x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY });
+	}
+
 	renderInline = (props, editor, next) => {
 		const { attributes, children, node } = props;
 
@@ -418,7 +475,7 @@ class SlateEditor extends React.Component {
 			const { data } = node;
 			const href = data.get("href");
 			return (
-				<a {...attributes} href={href}>
+				<a {...attributes} href={href} onClick={this.onMouseClick}>
 					{children}
 				</a>
 			);
@@ -524,6 +581,7 @@ class SlateEditor extends React.Component {
 						renderInline={this.renderInline}
 						style={{ border: "1px solid grey", minHeight: "60px" }}
 					/>
+					{this.renderDialog()}
 				</div>
 				<div>
 					<p>State (JSON object):</p>
