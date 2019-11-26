@@ -40,8 +40,12 @@ class SlateEditor extends React.Component {
 			// Deserialize the initial editor value.
 			value: Value.fromJSON(initialValue),
 			rendered: false,
-			x: null,
-			y: null,
+			// to store detected X, Y mouse position offset
+			cursorPosition: {
+				x: null,
+				y: null,
+			},
+			isDialog: false,
 		};
 	}
 
@@ -58,14 +62,6 @@ class SlateEditor extends React.Component {
 		this.setState({ value });
 	};
 
-	/**
-	 * On paste, if the text is a link, wrap the selection in a link.
-	 *
-	 * @param {Event} event
-	 * @param {Editor} editor
-	 * @param {Function} next
-	 */
-
 	onPaste = (event, editor, next) => {
 		if (editor.value.selection.isCollapsed) return next();
 
@@ -79,7 +75,7 @@ class SlateEditor extends React.Component {
 		}
 
 		this.wrapLink(editor, text);
-	}
+	};
 
 	// On key down, if it's a formatting command toggle a mark.
 	onKeyDown = (event, editor, next) => {
@@ -210,7 +206,6 @@ class SlateEditor extends React.Component {
 	}
 
 	renderDialog = () => {
-		const { editor } = this;
 		const { value } = this.state;
 		if (value.inlines.some(inline => inline.type === "link")) {
 			// get url value
@@ -219,16 +214,29 @@ class SlateEditor extends React.Component {
 				href = inline.data.get("href");
 			});
 
-			const top = this.state.y;
-			const left = this.state.x;
+			// setup the correct top and left distance for the dialog
+			const top = this.state.cursorPosition.y + window.screenTop;
+			const left = this.state.cursorPosition.x;
 
 			// display toaster a bit below the href as at Quill.
-			return <div style={{ position: "relative", top: `${top}px`, left: `${left}px`, backgroundColor: "grey"}}>
-				<span>Visit URL:</span>
-				<a href={href}>{href}</a>
-				<button onClick={this.editLink}>Edit</button>
-				<button onClick={this.removeUrl}>Remove</button>
-			</div>;
+			return (
+				<div style={{
+					display: "flex",
+					flexDirection: "row",
+					justifyContent: "space-between",
+					position: "absolute",
+					top: `${top}px`,
+					left: `${left}px`,
+					backgroundColor: "grey",
+					width: "250px",
+				}}>
+					<span style={{ maxWidth: "120px"}}>Visit URL: <a href={href}>{href}</a></span>
+					<span>
+						<button onClick={this.editLink}>Edit</button>
+						<button onClick={this.removeUrl}>Remove</button>
+					</span>
+				</div>
+			);
 		}
 	}
 
@@ -464,7 +472,17 @@ class SlateEditor extends React.Component {
 	 */
 
 	onMouseClick = e => {
-		this.setState({ x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY });
+		const el = e.target;
+		const distanceFromTop = el.getBoundingClientRect().top;
+		const distanceFromLeft = el.getBoundingClientRect().left; 
+
+		this.setState({
+			cursorPosition: {
+				x: distanceFromLeft,
+				y: distanceFromTop,
+			},
+			isDialog: true,
+		});
 	}
 
 	renderInline = (props, editor, next) => {
@@ -580,8 +598,9 @@ class SlateEditor extends React.Component {
 						renderMark={this.renderMark}
 						renderInline={this.renderInline}
 						style={{ border: "1px solid grey", minHeight: "60px" }}
+						onBlur={() => this.setState({ isDialog: !this.state.isDialog })}
 					/>
-					{this.renderDialog()}
+					{this.state.isDialog && this.renderDialog()}
 				</div>
 				<div>
 					<p>State (JSON object):</p>
