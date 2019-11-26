@@ -1,7 +1,8 @@
 import React from "react";
-import { Editor } from "slate-react";
+import { Editor, getEventTransfer } from "slate-react";
 import { KeyUtils, Value } from "slate";
 import { isKeyHotkey } from "is-hotkey";
+import isUrl from "is-url";
 import PropTypes from "prop-types";
 
 import Button from "./Button";
@@ -39,6 +40,12 @@ class SlateEditor extends React.Component {
 			// Deserialize the initial editor value.
 			value: Value.fromJSON(initialValue),
 			rendered: false,
+			// to store detected X, Y mouse position offset
+			cursorPosition: {
+				x: null,
+				y: null,
+			},
+			isDialog: false,
 		};
 	}
 
@@ -53,6 +60,21 @@ class SlateEditor extends React.Component {
 	// On change, save the new `value`.
 	onChange = ({ value }) => {
 		this.setState({ value });
+	};
+
+	onPaste = (event, editor, next) => {
+		if (editor.value.selection.isCollapsed) return next();
+
+		const transfer = getEventTransfer(event);
+		const { type, text } = transfer;
+		if (type !== "text" && type !== "html") return next();
+		if (!isUrl(text)) return next();
+
+		if (this.hasLinks()) {
+			this.unwrapLink(editor);
+		}
+
+		this.wrapLink(editor, text);
 	};
 
 	// On key down, if it's a formatting command toggle a mark.
@@ -138,6 +160,192 @@ class SlateEditor extends React.Component {
 		return value.blocks.some(node => node.type === type);
 	};
 
+	// Check if the any of the currently selected blocks are of data `align`
+	hasAlign = align => {
+		const { value } = this.state;
+		return value.blocks.some(node => node.data.get("align") === align);
+	}
+
+	/**
+	 * Check whether the current selection has a link in it.
+	 *
+	 * @return {Boolean} hasLinks
+	 */
+
+	hasLinks = () => {
+		const { value } = this.state;
+		return value.inlines.some(inline => inline.type === "link");
+	}
+
+	removeUrl = () => {
+		const { editor } = this;
+		if (this.hasLinks()) {
+			this.unwrapLink(editor);
+		}
+		
+	}
+
+	editLink = () => {
+		const { editor } = this;
+
+		const { value } = this.state;
+		let currentHref = "";
+
+		if (this.hasLinks()) {
+			value.inlines.some(inline => {
+				currentHref = inline.data.get("href");
+			});
+			const href = window.prompt("Enter the URL of the link:", currentHref);
+			editor
+				.setInlines({
+					type: "link",
+					data: { href },
+				});
+			
+		}
+	}
+
+	renderDialog = () => {
+		const { value } = this.state;
+		if (value.inlines.some(inline => inline.type === "link")) {
+			// get url value
+			let href = "";
+			value.inlines.some(inline => {
+				href = inline.data.get("href");
+			});
+
+			// setup the correct top and left distance for the dialog
+			const top = this.state.cursorPosition.y + window.screenTop;
+			const left = this.state.cursorPosition.x;
+
+			// display toaster a bit below the href as at Quill.
+			return (
+				<div style={{
+					display: "flex",
+					flexDirection: "row",
+					justifyContent: "space-between",
+					position: "absolute",
+					top: `${top}px`,
+					left: `${left}px`,
+					backgroundColor: "grey",
+					width: "250px",
+				}}>
+					<span style={{ maxWidth: "120px"}}>Visit URL: <a href={href}>{href}</a></span>
+					<span>
+						<button onClick={this.editLink}>Edit</button>
+						<button onClick={this.removeUrl}>Remove</button>
+					</span>
+				</div>
+			);
+		}
+	}
+
+	/**
+ * A change helper to standardize wrapping links.
+ *
+ * @param {Editor} editor
+ * @param {String} href
+ */
+
+	wrapLink = (editor, href) => {
+		editor.wrapInline({
+			type: "link",
+			data: { href },
+		});
+
+		editor.moveToEnd();
+	}
+
+	/**
+ * A change helper to standardize unwrapping links.
+ *
+ * @param {Editor} editor
+ */
+
+	unwrapLink = (editor) => {
+		editor.unwrapInline("link");
+	}
+
+	onClickAlign = align => {
+
+		const { editor } = this;
+
+		// This is related to the editing state of the block accessed by a key (for example, when we are at the children block right now, but we need to change parent block state, etc)
+		// https://docs.slatejs.org/slate-core/commands#setnodebykey-path
+		// editor.setNodeByKey("4", {
+		// 	data: { align },
+		// });
+
+		if (this.hasAlign(align)) {
+			return editor.setBlocks({
+				data: {},
+			}).focus();
+		}
+		return editor.setBlocks({
+			data: { align },
+		}).focus();
+	}
+
+	/**
+	 * When clicking a link, if the selection has a link in it, remove the link.
+	 * Otherwise, add a new link with an href and text.
+	 *
+	 * @param {Event} event
+	 */
+
+	onClickLink = event => {
+		event.preventDefault();
+
+		const { editor } = this;
+		const { value } = editor;
+		const hasLinks = this.hasLinks();
+
+		if (hasLinks) {
+			this.unwrapLink(editor);
+		} else if (value.selection.isExpanded) {
+			const href = window.prompt("Enter the URL of the link:");
+
+			if (href == null) {
+				return;
+			}
+
+			this.wrapLink(editor, href);
+		} else {
+			const href = window.prompt("Enter the URL of the link:");
+
+			if (href == null) {
+				return;
+			}
+
+			const text = window.prompt("Enter the text for the link:");
+
+			if (text == null) {
+				return;
+			}
+
+			editor
+				.insertText(text)
+				.moveFocusBackward(text.length)
+				.command(this.wrapLink, href);
+		}
+	}
+
+	renderAlignButton = (type, icon) => {
+		const isActive = this.hasAlign(type);
+		return (
+			<Button
+				key={type}
+				active={isActive}
+				onMouseDown={() => this.onClickAlign(type)}
+			>
+				{icon}
+			</Button>
+		);
+	}
+
+	// Check what align options are passed
+	hasMultipleAligns = alignProp => Array.isArray(alignProp);
+
 	// Store a reference to the `editor`.
 	ref = editor => {
 		this.editor = editor;
@@ -188,31 +396,50 @@ class SlateEditor extends React.Component {
 		);
 	};
 
+	renderInlineButton = icon => {
+		const isActive = this.hasLinks();
+		return (
+			<Button
+				active={isActive}
+				onMouseDown={this.onClickLink}
+			>
+				{icon}
+			</Button>
+		);
+	}
+
 	// Render a Slate block
 	renderBlock = (props, editor, next) => {
 		const { attributes, children, node } = props;
+		let align = node.data.get("align");
+		// Reset the align onClick on the currently active button
+		if (!align) {
+			align = "left";
+		}
 
 		switch (node.type) {
+		case "paragraph":
+			return <p {...attributes} style={{ textAlign: this.props.textAlign && `${align}`}}>{children}</p>;
 		case "block-quote":
-			return <blockquote {...attributes}>{children}</blockquote>;
+			return <blockquote {...attributes} style={{ textAlign: `${align}`}}>{children}</blockquote>;
 		case "bulleted-list":
-			return <ul {...attributes}>{children}</ul>;
+			return <ul {...attributes} style={{ listStylePosition: "inside" }}>{children}</ul>;
 		case "heading-one":
-			return <h1 {...attributes}>{children}</h1>;
+			return <h1 {...attributes} style={{ textAlign: `${align}`}}>{children}</h1>;
 		case "heading-two":
-			return <h2 {...attributes}>{children}</h2>;
+			return <h2 {...attributes} style={{ textAlign: `${align}`}}>{children}</h2>;
 		case "heading-three":
-			return <h3 {...attributes}>{children}</h3>;
+			return <h3 {...attributes} style={{ textAlign: `${align}`}}>{children}</h3>;
 		case "heading-four":
-			return <h4 {...attributes}>{children}</h4>;
+			return <h4 {...attributes} style={{ textAlign: `${align}`}}>{children}</h4>;
 		case "heading-five":
-			return <h5 {...attributes}>{children}</h5>;
+			return <h5 {...attributes} style={{ textAlign: `${align}`}}>{children}</h5>;
 		case "heading-six":
-			return <h6 {...attributes}>{children}</h6>;
+			return <h6 {...attributes} style={{ textAlign: `${align}`}}>{children}</h6>;
 		case "list-item":
-			return <li {...attributes}>{children}</li>;
+			return <li {...attributes} style={{ textAlign: `${align}`}}>{children}</li>;
 		case "numbered-list":
-			return <ol {...attributes}>{children}</ol>;
+			return <ol {...attributes} style={{ listStylePosition: "inside" }}>{children}</ol>;
 		default:
 			return next();
 		}
@@ -221,7 +448,6 @@ class SlateEditor extends React.Component {
 	// Render a Slate mark
 	renderMark = (props, editor, next) => {
 		const { children, mark, attributes } = props;
-
 		switch (mark.type) {
 		case "bold":
 			return <strong {...attributes}>{children}</strong>;
@@ -235,6 +461,54 @@ class SlateEditor extends React.Component {
 			return next();
 		}
 	};
+
+	/**
+	 * Render a Slate inline.
+	 *
+	 * @param {Object} props
+	 * @param {Editor} editor
+	 * @param {Function} next
+	 * @return {Element}
+	 */
+
+	onMouseClick = e => {
+		const el = e.target;
+		const distanceFromTop = el.getBoundingClientRect().top;
+		const distanceFromLeft = el.getBoundingClientRect().left; 
+
+		this.setState({
+			cursorPosition: {
+				x: distanceFromLeft,
+				y: distanceFromTop,
+			},
+			isDialog: true,
+		});
+	}
+
+	renderInline = (props, editor, next) => {
+		const { attributes, children, node } = props;
+
+		switch (node.type) {
+		case "link": {
+			const { data } = node;
+			const href = data.get("href");
+			return (
+				<a {...attributes} href={href} onClick={this.onMouseClick}>
+					{children}
+				</a>
+			);
+		}
+		default: {
+			return next();
+		}
+		}
+	}
+
+	renderAlignButtons = () => {
+		return this.props.textAlign.map(align =>
+			this.renderAlignButton(align, `format_align_${align}`)
+		);
+	}
 
 	// Main Render
 	render() {
@@ -293,6 +567,13 @@ class SlateEditor extends React.Component {
 							</>
 						)}
 
+						{/* Text-Align */}
+						{this.props.textAlign &&
+							(this.hasMultipleAligns(this.props.textAlign) ?
+								this.renderAlignButtons() :
+								this.renderAlignButton(this.props.textAlign, `format_align_${this.props.textAlign}`))
+						}
+
 						{/* Blockquote */}
 						{this.props.blockquote && this.renderBlockButton("block-quote", "format_quote")}
 
@@ -301,6 +582,8 @@ class SlateEditor extends React.Component {
 
 						{/* Unordered List */}
 						{this.props.ul && this.renderBlockButton("bulleted-list", "format_list_bulleted")}
+
+						{this.props.link && this.renderInlineButton("link")}
 					</Toolbar>
 					<Editor
 						spellCheck
@@ -310,10 +593,14 @@ class SlateEditor extends React.Component {
 						value={this.state.value}
 						onChange={this.onChange}
 						onKeyDown={this.onKeyDown}
+						onPaste={this.onPaste}
 						renderBlock={this.renderBlock}
 						renderMark={this.renderMark}
+						renderInline={this.renderInline}
 						style={{ border: "1px solid grey", minHeight: "60px" }}
+						onBlur={() => this.setState({ isDialog: !this.state.isDialog })}
 					/>
+					{this.state.isDialog && this.renderDialog()}
 				</div>
 				<div>
 					<p>State (JSON object):</p>
@@ -355,6 +642,8 @@ SlateEditor.defaultProps = {
 	blockquote: false,
 	ol: false,
 	ul: false,
+	textAlign: null,
+	link: false,
 };
 
 SlateEditor.propTypes = {
@@ -374,6 +663,11 @@ SlateEditor.propTypes = {
 	blockquote: PropTypes.bool,
 	ol: PropTypes.bool,
 	ul: PropTypes.bool,
+	textAlign: PropTypes.oneOfType([
+		PropTypes.arrayOf(PropTypes.string),
+		PropTypes.string,
+	]),
+	link: PropTypes.bool,
 };
 
 export default SlateEditor;
