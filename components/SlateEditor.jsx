@@ -47,6 +47,8 @@ class SlateEditor extends React.Component {
 			},
 			isDialog: false,
 		};
+		this.setWrapperRef = this.setWrapperRef.bind(this);
+		this.handleClickOutside = this.handleClickOutside.bind(this);
 	}
 
 	// Side - Effects
@@ -54,6 +56,23 @@ class SlateEditor extends React.Component {
 		this.setState({
 			rendered: true,
 		});
+		document.addEventListener("mousedown", this.handleClickOutside);
+	}
+
+	componentWillUnmount() {
+		document.removeEventListener("mousedown", this.handleClickOutside);
+	}
+
+	setWrapperRef(node) {
+		this.wrapperRef = node;
+	}
+
+	handleClickOutside(event) {
+		if (this.wrapperRef && !this.wrapperRef.contains(event.target)) {
+			this.setState({
+				isDialog: false,
+			});
+		}
 	}
 
 	// Functions: Event-Handlers
@@ -220,21 +239,24 @@ class SlateEditor extends React.Component {
 
 			// display toaster a bit below the href as at Quill.
 			return (
-				<div style={{
-					display: "flex",
-					flexDirection: "row",
-					justifyContent: "space-between",
-					position: "absolute",
-					top: `${top}px`,
-					left: `${left}px`,
-					backgroundColor: "grey",
-					width: "250px",
-				}}>
-					<span style={{ maxWidth: "120px"}}>Visit URL: <a href={href}>{href}</a></span>
-					<span>
-						<button onClick={this.editLink}>Edit</button>
-						<button onClick={this.removeUrl}>Remove</button>
-					</span>
+				<div ref={this.setWrapperRef}>
+					<div style={{
+						display: "flex",
+						flexDirection: "row",
+						justifyContent: "space-between",
+						position: "absolute",
+						top: `${top}px`,
+						left: `${left}px`,
+						backgroundColor: "grey",
+						width: "250px",
+					}}
+					>
+						<span style={{ maxWidth: "120px"}}>Visit URL: <a href={href}>{href}</a></span>
+						<span>
+							<button onClick={this.editLink}>Edit</button>
+							<button onClick={this.removeUrl}>Remove</button>
+						</span>
+					</div>
 				</div>
 			);
 		}
@@ -598,7 +620,6 @@ class SlateEditor extends React.Component {
 						renderMark={this.renderMark}
 						renderInline={this.renderInline}
 						style={{ border: "1px solid grey", minHeight: "60px" }}
-						onBlur={() => this.setState({ isDialog: !this.state.isDialog })}
 					/>
 					{this.state.isDialog && this.renderDialog()}
 				</div>
