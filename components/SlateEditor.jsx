@@ -452,7 +452,7 @@ class SlateEditor extends React.Component {
 		case "bold":
 			return <strong {...attributes}>{children}</strong>;
 		case "code":
-			return <code {...attributes}>{children}</code>;
+			return <code {...attributes} style={{ backgroundColor: "#D3D3D3", color: "#D66A00" }}>{children}</code>;
 		case "italic":
 			return <em {...attributes}>{children}</em>;
 		case "underlined":
