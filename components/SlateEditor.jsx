@@ -421,23 +421,23 @@ class SlateEditor extends React.Component {
 		case "paragraph":
 			return <p {...attributes} style={{ textAlign: this.props.textAlign && `${align}`}}>{children}</p>;
 		case "block-quote":
-			return <blockquote {...attributes} style={{ textAlign: `${align}`}}>{children}</blockquote>;
+			return <blockquote {...attributes} style={{ textAlign: `${align}` }}>{children}</blockquote>;
 		case "bulleted-list":
 			return <ul {...attributes} style={{ listStylePosition: "inside" }}>{children}</ul>;
 		case "heading-one":
-			return <h1 {...attributes} style={{ textAlign: `${align}`}}>{children}</h1>;
+			return <h1 {...attributes} style={{ textAlign: `${align}` }}>{children}</h1>;
 		case "heading-two":
-			return <h2 {...attributes} style={{ textAlign: `${align}`}}>{children}</h2>;
+			return <h2 {...attributes} style={{ textAlign: `${align}` }}>{children}</h2>;
 		case "heading-three":
-			return <h3 {...attributes} style={{ textAlign: `${align}`}}>{children}</h3>;
+			return <h3 {...attributes} style={{ textAlign: `${align}` }}>{children}</h3>;
 		case "heading-four":
-			return <h4 {...attributes} style={{ textAlign: `${align}`}}>{children}</h4>;
+			return <h4 {...attributes} style={{ textAlign: `${align}` }}>{children}</h4>;
 		case "heading-five":
-			return <h5 {...attributes} style={{ textAlign: `${align}`}}>{children}</h5>;
+			return <h5 {...attributes} style={{ textAlign: `${align}` }}>{children}</h5>;
 		case "heading-six":
-			return <h6 {...attributes} style={{ textAlign: `${align}`}}>{children}</h6>;
+			return <h6 {...attributes} style={{ textAlign: `${align}` }}>{children}</h6>;
 		case "list-item":
-			return <li {...attributes} style={{ textAlign: `${align}`}}>{children}</li>;
+			return <li {...attributes} style={{ textAlign: `${align}` }}>{children}</li>;
 		case "numbered-list":
 			return <ol {...attributes} style={{ listStylePosition: "inside" }}>{children}</ol>;
 		default:
