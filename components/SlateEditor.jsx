@@ -421,7 +421,7 @@ class SlateEditor extends React.Component {
 		case "paragraph":
 			return <p {...attributes} style={{ textAlign: this.props.textAlign && `${align}`}}>{children}</p>;
 		case "block-quote":
-			return <blockquote {...attributes} style={{ textAlign: `${align}` }}>{children}</blockquote>;
+			return <blockquote {...attributes} style={{ textAlign: `${align}`, color: "grey", borderLeft: "3px solid grey", paddingLeft: "15px" }}>{children}</blockquote>;
 		case "bulleted-list":
 			return <ul {...attributes} style={{ listStylePosition: "inside" }}>{children}</ul>;
 		case "heading-one":
