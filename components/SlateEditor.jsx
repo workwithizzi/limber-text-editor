@@ -1,6 +1,6 @@
 import React from "react";
 import { Editor, getEventTransfer } from "slate-react";
-import { KeyUtils, Value } from "slate";
+import { Value } from "slate";
 import { isKeyHotkey } from "is-hotkey";
 import isUrl from "is-url";
 import PropTypes from "prop-types";
@@ -8,27 +8,7 @@ import PropTypes from "prop-types";
 import Button from "./Button";
 import Toolbar from "./Toolbar";
 
-// Resets Slate's internal key generating function to its default state.
-// See: https://github.com/ianstormtaylor/slate/blob/master/docs/reference/slate/utils.md
-KeyUtils.resetGenerator();
-
-// Create our initial value...
-const initialValue = Value.fromJSON({
-	document: {
-		nodes: [
-			{
-				object: "block",
-				type: "paragraph",
-				nodes: [
-					{
-						object: "text",
-						text: "A line of placeholder text in a paragraph.",
-					},
-				],
-			},
-		],
-	},
-});
+import INITIAL_VALUE from "./slate-editor/initialValue";
 
 // The rich text example.
 class SlateEditor extends React.Component {
@@ -38,7 +18,7 @@ class SlateEditor extends React.Component {
 		super(props);
 		this.state = {
 			// Deserialize the initial editor value.
-			value: Value.fromJSON(initialValue),
+			value: Value.fromJSON(INITIAL_VALUE),
 			rendered: false,
 			// to store detected X, Y mouse position offset
 			cursorPosition: {
