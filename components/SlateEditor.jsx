@@ -5,20 +5,20 @@ import { isKeyHotkey } from "is-hotkey";
 import isUrl from "is-url";
 import PropTypes from "prop-types";
 
-import Button from "./Button";
-import Toolbar from "./Toolbar";
+import { initialValue, Button, Toolbar } from "./slate-editor-core";
 
-import INITIAL_VALUE from "./slate-editor/initialValue";
+// TextAlign
+import { hasMultipleAligns, renderAlignButton, renderAlignButtons } from "./slate-editor-formats/text-align";
 
 // The rich text example.
-class SlateEditor extends React.Component {
 
+class SlateEditor extends React.Component {
 	// Constructor
 	constructor(props) {
 		super(props);
 		this.state = {
 			// Deserialize the initial editor value.
-			value: Value.fromJSON(INITIAL_VALUE),
+			value: Value.fromJSON(initialValue),
 			isAppRendered: false,
 			// to store detected X, Y mouse position offset
 			cursorPosition: {
@@ -140,12 +140,6 @@ class SlateEditor extends React.Component {
 		return value.blocks.some(node => node.type === type);
 	};
 
-	// Check if the any of the currently selected blocks are of data `align`
-	hasAlign = align => {
-		const { value } = this.state;
-		return value.blocks.some(node => node.data.get("align") === align);
-	}
-
 	/**
 	 * Check whether the current selection has a link in it.
 	 *
@@ -246,26 +240,6 @@ class SlateEditor extends React.Component {
 		editor.unwrapInline("link");
 	}
 
-	onClickAlign = align => {
-
-		const { editor } = this;
-
-		// This is related to the editing state of the block accessed by a key (for example, when we are at the children block right now, but we need to change parent block state, etc)
-		// https://docs.slatejs.org/slate-core/commands#setnodebykey-path
-		// editor.setNodeByKey("4", {
-		// 	data: { align },
-		// });
-
-		if (this.hasAlign(align)) {
-			return editor.setBlocks({
-				data: {},
-			}).focus();
-		}
-		return editor.setBlocks({
-			data: { align },
-		}).focus();
-	}
-
 	/**
 	 * When clicking a link, if the selection has a link in it, remove the link.
 	 * Otherwise, add a new link with an href and text.
@@ -309,22 +283,6 @@ class SlateEditor extends React.Component {
 				.command(this.wrapLink, href);
 		}
 	}
-
-	renderAlignButton = (type, icon) => {
-		const isActive = this.hasAlign(type);
-		return (
-			<Button
-				key={type}
-				active={isActive}
-				onMouseDown={() => this.onClickAlign(type)}
-			>
-				{icon}
-			</Button>
-		);
-	}
-
-	// Check what align options are passed
-	hasMultipleAligns = alignProp => Array.isArray(alignProp);
 
 	// Store a reference to the `editor`.
 	ref = editor => {
@@ -484,16 +442,18 @@ class SlateEditor extends React.Component {
 		}
 	}
 
-	renderAlignButtons = () => {
-		return this.props.textAlign.map(align =>
-			this.renderAlignButton(align, `format_align_${align}`)
-		);
-	}
-
 	// Main Render
 	render() {
+
+		// Global Context Destructuring
+		const { editor } = this;
+
 		// State Destructuring
-		const { isAppRendered } = this.state;
+		const { isAppRendered, value } = this.state;
+
+		// Props Destructuring
+		const { textAlign } = this.props;
+
 		return (
 			<>
 				<div
@@ -549,11 +509,13 @@ class SlateEditor extends React.Component {
 							</>
 						)}
 
-						{/* Text-Align */}
-						{this.props.textAlign &&
-							(this.hasMultipleAligns(this.props.textAlign) ?
-								this.renderAlignButtons() :
-								this.renderAlignButton(this.props.textAlign, `format_align_${this.props.textAlign}`))
+						{/* Text Align */}
+						{textAlign &&
+							(
+								hasMultipleAligns(textAlign) ?
+									renderAlignButtons(textAlign, value, editor) :
+									renderAlignButton(textAlign, value, `format_align_${textAlign}`, editor)
+							)
 						}
 
 						{/* Blockquote */}
