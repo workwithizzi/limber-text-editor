@@ -10,6 +10,10 @@ import { initialValue, Button, Toolbar } from "./slate-editor-core";
 // TextAlign
 import { hasMultipleAligns, renderAlignButton, renderAlignButtons } from "./slate-editor-formats/text-align";
 
+// Link
+import hasLinks from "./slate-editor-formats/link/hasLinks";
+import unwrapLink from "./slate-editor-formats/link/unwrapLink";
+
 // The rich text example.
 
 class SlateEditor extends React.Component {
@@ -56,6 +60,15 @@ class SlateEditor extends React.Component {
 
 		this.wrapLink(editor, text);
 	};
+
+	unwrapLink = (editor) => {
+		editor.unwrapInline("link");
+	}
+
+	hasLinks = () => {
+		const { value } = this.state;
+		return value.inlines.some(inline => inline.type === "link");
+	}
 
 	// On key down, if it's a formatting command toggle a mark.
 	onKeyDown = (event, editor, next) => {
@@ -140,17 +153,6 @@ class SlateEditor extends React.Component {
 		return value.blocks.some(node => node.type === type);
 	};
 
-	/**
-	 * Check whether the current selection has a link in it.
-	 *
-	 * @return {Boolean} hasLinks
-	 */
-
-	hasLinks = () => {
-		const { value } = this.state;
-		return value.inlines.some(inline => inline.type === "link");
-	}
-
 	removeUrl = () => {
 		const { editor } = this;
 		if (this.hasLinks()) {
@@ -231,16 +233,6 @@ class SlateEditor extends React.Component {
 	}
 
 	/**
- * A change helper to standardize unwrapping links.
- *
- * @param {Editor} editor
- */
-
-	unwrapLink = (editor) => {
-		editor.unwrapInline("link");
-	}
-
-	/**
 	 * When clicking a link, if the selection has a link in it, remove the link.
 	 * Otherwise, add a new link with an href and text.
 	 *
@@ -252,9 +244,8 @@ class SlateEditor extends React.Component {
 
 		const { editor } = this;
 		const { value } = editor;
-		const hasLinks = this.hasLinks();
 
-		if (hasLinks) {
+		if (this.hasLinks()) {
 			this.unwrapLink(editor);
 		} else if (value.selection.isExpanded) {
 			const href = window.prompt("Enter the URL of the link:");
