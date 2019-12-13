@@ -19,7 +19,7 @@ class SlateEditor extends React.Component {
 		this.state = {
 			// Deserialize the initial editor value.
 			value: Value.fromJSON(INITIAL_VALUE),
-			rendered: false,
+			isAppRendered: false,
 			// to store detected X, Y mouse position offset
 			cursorPosition: {
 				x: null,
@@ -32,7 +32,7 @@ class SlateEditor extends React.Component {
 	// Side - Effects
 	componentDidMount() {
 		this.setState({
-			rendered: true,
+			isAppRendered: true,
 		});
 	}
 
@@ -492,6 +492,8 @@ class SlateEditor extends React.Component {
 
 	// Main Render
 	render() {
+		// State Destructuring
+		const { isAppRendered } = this.state;
 		return (
 			<>
 				<div
@@ -595,12 +597,14 @@ class SlateEditor extends React.Component {
 						{JSON.stringify(this.state, null, 2)}
 					</pre>
 				</div>
-				{this.state.rendered ? (
-					<>
-						<p>HTML:</p>
-						<div dangerouslySetInnerHTML={this.createMarkup()}></div>
-					</>
-				) : null}
+				{
+					isAppRendered && (
+						<>
+							<p>HTML:</p>
+							<div dangerouslySetInnerHTML={this.createMarkup()}></div>
+						</>
+					)
+				}
 			</>
 		);
 	}
