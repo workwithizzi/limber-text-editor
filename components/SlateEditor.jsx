@@ -10,9 +10,32 @@ import { initialValue, Button, Toolbar } from "./slate-editor-core";
 // TextAlign
 import { hasMultipleAligns, renderAlignButton, renderAlignButtons } from "./slate-editor-formats/text-align";
 
-// Link
-import hasLinks from "./slate-editor-formats/link/hasLinks";
-import unwrapLink from "./slate-editor-formats/link/unwrapLink";
+/**
+ * A change helper to standardize wrapping links.
+ *
+ * @param {Editor} editor
+ * @param {String} href
+ */
+
+function wrapLink(editor, href) {
+	editor.wrapInline({
+		type: "link",
+		data: { href },
+	});
+
+	editor.moveToEnd();
+}
+
+/**
+ * A change helper to standardize unwrapping links.
+ *
+ * @param {Editor} editor
+ */
+
+function unwrapLink(editor) {
+	editor.unwrapInline("link");
+}
+
 
 // The rich text example.
 
@@ -46,7 +69,21 @@ class SlateEditor extends React.Component {
 		this.setState({ value });
 	};
 
+	/**
+	 * On paste, if the text is a link, wrap the selection in a link.
+	 *
+	 * @param {Event} event
+	 * @param {Editor} editor
+	 * @param {Function} next
+	 */
+
+	hasLinks = () => {
+		const { value } = this.state;
+		return value.inlines.some(inline => inline.type === "link");
+	}
+
 	onPaste = (event, editor, next) => {
+		
 		if (editor.value.selection.isCollapsed) return next();
 
 		const transfer = getEventTransfer(event);
@@ -55,19 +92,10 @@ class SlateEditor extends React.Component {
 		if (!isUrl(text)) return next();
 
 		if (this.hasLinks()) {
-			this.unwrapLink(editor);
+			editor.command(unwrapLink);
 		}
-
-		this.wrapLink(editor, text);
-	};
-
-	unwrapLink = (editor) => {
-		editor.unwrapInline("link");
-	}
-
-	hasLinks = () => {
-		const { value } = this.state;
-		return value.inlines.some(inline => inline.type === "link");
+		editor.command(wrapLink, text);
+		event.preventDefault();
 	}
 
 	// On key down, if it's a formatting command toggle a mark.
@@ -177,7 +205,6 @@ class SlateEditor extends React.Component {
 					type: "link",
 					data: { href },
 				});
-			
 		}
 	}
 
@@ -217,22 +244,6 @@ class SlateEditor extends React.Component {
 	}
 
 	/**
- * A change helper to standardize wrapping links.
- *
- * @param {Editor} editor
- * @param {String} href
- */
-
-	wrapLink = (editor, href) => {
-		editor.wrapInline({
-			type: "link",
-			data: { href },
-		});
-
-		editor.moveToEnd();
-	}
-
-	/**
 	 * When clicking a link, if the selection has a link in it, remove the link.
 	 * Otherwise, add a new link with an href and text.
 	 *
@@ -244,9 +255,10 @@ class SlateEditor extends React.Component {
 
 		const { editor } = this;
 		const { value } = editor;
+		const hasLinks = this.hasLinks();
 
-		if (this.hasLinks()) {
-			this.unwrapLink(editor);
+		if (hasLinks) {
+			editor.command(unwrapLink);
 		} else if (value.selection.isExpanded) {
 			const href = window.prompt("Enter the URL of the link:");
 
@@ -254,7 +266,7 @@ class SlateEditor extends React.Component {
 				return;
 			}
 
-			this.wrapLink(editor, href);
+			editor.command(wrapLink, href);
 		} else {
 			const href = window.prompt("Enter the URL of the link:");
 
@@ -271,8 +283,9 @@ class SlateEditor extends React.Component {
 			editor
 				.insertText(text)
 				.moveFocusBackward(text.length)
-				.command(this.wrapLink, href);
+				.command(wrapLink, href);
 		}
+
 	}
 
 	// Store a reference to the `editor`.
