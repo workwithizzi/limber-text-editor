@@ -13,7 +13,7 @@ import { hasMultipleAligns, renderAlignButton, renderAlignButtons } from "./slat
 import wrapLink from "./slate-editor-formats/link/wrapLink";
 import unwrapLink from "./slate-editor-formats/link/unwrapLink";
 import hasLinks from "./slate-editor-formats/link/hasLinks";
-import onPaste from "./slate-editor-formats/link/onPaste";
+import onPasteLink from "./slate-editor-formats/link/onPasteLink";
 
 class SlateEditor extends React.Component {
 	// Constructor
@@ -486,7 +486,7 @@ class SlateEditor extends React.Component {
 						value={this.state.value}
 						onChange={this.onChange}
 						onKeyDown={this.onKeyDown}
-						onPaste={event => onPaste(event, this.editor, this.state.value)}
+						onPaste={event => onPasteLink(event, this.editor, this.state.value)}
 						renderBlock={this.renderBlock}
 						renderMark={this.renderMark}
 						renderInline={this.renderInline}

@@ -14,7 +14,7 @@ import unwrapLink from "./unwrapLink";
  * @param {State} value - An editor's value/state.
  */
 
-function onPaste(event, editor, value) {
+function onPasteLink(event, editor, value) {
 	if (editor.value.selection.isCollapsed) return;
 
 	const transfer = getEventTransfer(event);
@@ -29,10 +29,10 @@ function onPaste(event, editor, value) {
 	event.preventDefault();
 }
 
-onPaste.propTypes = {
+onPasteLink.propTypes = {
 	event: PropTypes.object.isRequired,
 	editor: PropTypes.object.isRequired,
 	value: PropTypes.object.isRequired,
 };
 
-export default onPaste;
+export default onPasteLink;
