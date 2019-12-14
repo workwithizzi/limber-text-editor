@@ -10,10 +10,9 @@ import { initialValue, Button, Toolbar } from "./slate-editor-core";
 import { hasMultipleAligns, renderAlignButton, renderAlignButtons } from "./slate-editor-formats/text-align";
 
 // Link
-import wrapLink from "./slate-editor-formats/link/wrapLink";
-import unwrapLink from "./slate-editor-formats/link/unwrapLink";
-import hasLinks from "./slate-editor-formats/link/hasLinks";
 import onPasteLink from "./slate-editor-formats/link/onPasteLink";
+import renderLinkDialogWindow from "./slate-editor-formats/link/renderLinkDialogWindow";
+import renderLinkButton from "./slate-editor-formats/link/renderLinkButton";
 
 class SlateEditor extends React.Component {
 	// Constructor
@@ -128,111 +127,6 @@ class SlateEditor extends React.Component {
 		return value.blocks.some(node => node.type === type);
 	};
 
-	removeUrl = () => {
-		const { editor } = this;
-		if (hasLinks(this.state.value)) {
-			unwrapLink(editor);
-		}
-	}
-
-	editLink = () => {
-		const { editor } = this;
-
-		const { value } = this.state;
-		let currentHref = "";
-
-		if (hasLinks(this.state.value)) {
-			value.inlines.some(inline => {
-				currentHref = inline.data.get("href");
-			});
-			const href = window.prompt("Enter the URL of the link:", currentHref);
-			editor
-				.setInlines({
-					type: "link",
-					data: { href },
-				});
-		}
-	}
-
-	renderDialog = () => {
-		const { value } = this.state;
-		if (value.inlines.some(inline => inline.type === "link")) {
-			// get url value
-			let href = "";
-			value.inlines.some(inline => {
-				href = inline.data.get("href");
-			});
-
-			// setup the correct top and left distance for the dialog
-			const top = this.state.cursorPosition.y + window.screenTop;
-			const left = this.state.cursorPosition.x;
-
-			// display toaster a bit below the href as at Quill.
-			return (
-				<div style={{
-					display: "flex",
-					flexDirection: "row",
-					justifyContent: "space-between",
-					position: "absolute",
-					top: `${top}px`,
-					left: `${left}px`,
-					backgroundColor: "grey",
-					width: "250px",
-				}}>
-					<span style={{ maxWidth: "120px"}}>Visit URL: <a href={href}>{href}</a></span>
-					<span>
-						<button onClick={this.editLink}>Edit</button>
-						<button onClick={this.removeUrl}>Remove</button>
-					</span>
-				</div>
-			);
-		}
-	}
-
-	/**
-	 * When clicking a link, if the selection has a link in it, remove the link.
-	 * Otherwise, add a new link with an href and text.
-	 *
-	 * @param {Event} event
-	 */
-
-	onClickLink = event => {
-		event.preventDefault();
-
-		const { editor } = this;
-		const { value } = editor;
-
-		if (hasLinks(this.state.value)) {
-			editor.command(unwrapLink);
-		} else if (value.selection.isExpanded) {
-			const href = window.prompt("Enter the URL of the link:");
-
-			if (href == null) {
-				return;
-			}
-
-			editor.command(wrapLink, href);
-		} else {
-			const href = window.prompt("Enter the URL of the link:");
-
-			if (href == null) {
-				return;
-			}
-
-			const text = window.prompt("Enter the text for the link:");
-
-			if (text == null) {
-				return;
-			}
-
-			editor
-				.insertText(text)
-				.moveFocusBackward(text.length)
-				.command(wrapLink, href);
-		}
-
-	}
-
 	// Store a reference to the `editor`.
 	ref = editor => {
 		this.editor = editor;
@@ -282,18 +176,6 @@ class SlateEditor extends React.Component {
 			</Button>
 		);
 	};
-
-	renderInlineButton = icon => {
-		const isActive = hasLinks(this.state.value);
-		return (
-			<Button
-				active={isActive}
-				onMouseDown={this.onClickLink}
-			>
-				{icon}
-			</Button>
-		);
-	}
 
 	// Render a Slate block
 	renderBlock = (props, editor, next) => {
@@ -476,7 +358,7 @@ class SlateEditor extends React.Component {
 						{/* Unordered List */}
 						{this.props.ul && this.renderBlockButton("bulleted-list", "format_list_bulleted")}
 
-						{this.props.link && this.renderInlineButton("link")}
+						{this.props.link && renderLinkButton(this.editor, this.state.value, "link")}
 					</Toolbar>
 					<Editor
 						spellCheck
@@ -493,7 +375,7 @@ class SlateEditor extends React.Component {
 						style={{ border: "1px solid grey", minHeight: "60px" }}
 						onBlur={() => this.setState({ isDialog: !this.state.isDialog })}
 					/>
-					{this.state.isDialog && this.renderDialog()}
+					{this.state.isDialog && renderLinkDialogWindow(value, this.state.cursorPosition)}
 				</div>
 				<div>
 					<p>State (JSON object):</p>
