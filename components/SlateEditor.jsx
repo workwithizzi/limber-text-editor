@@ -3,7 +3,7 @@ import { Editor } from "slate-react";
 import { Value } from "slate";
 import PropTypes from "prop-types";
 
-import { initialValue, Button, Toolbar } from "./slate-editor-core";
+import { initialValue, Toolbar } from "./slate-editor-core";
 
 // TextAlign
 import { hasMultipleAligns, renderAlignButton, renderAlignButtons } from "./slate-editor-formats/text-align";
@@ -20,6 +20,9 @@ import {
 
 // Mark
 import { onKeyDown, renderMarkButton, renderMark } from "./slate-editor-marks";
+
+// Block
+import { renderBlockButton, renderBlock } from "./slate-editor-blocks";
 
 class SlateEditor extends React.Component {
 	// Constructor
@@ -51,59 +54,6 @@ class SlateEditor extends React.Component {
 		this.setState({ value });
 	};
 
-	// When a block button is clicked, toggle the block type.
-	onClickBlock = (event, type) => {
-		event.preventDefault();
-
-		const { editor } = this;
-		const { value } = editor;
-		const { document } = value;
-
-		// Handle everything but list buttons.
-		if (type !== "bulleted-list" && type !== "numbered-list") {
-			const isActive = this.hasBlock(type);
-			const isList = this.hasBlock("list-item");
-
-			if (isList) {
-				editor
-					.setBlocks(isActive ? this.props.defaultNode : type)
-					.unwrapBlock("bulleted-list")
-					.unwrapBlock("numbered-list");
-			} else {
-				editor.setBlocks(isActive ? this.props.defaultNode : type);
-			}
-		} else {
-			// Handle the extra wrapping required for list buttons.
-			const isList = this.hasBlock("list-item");
-			const isType = value.blocks.some(block => {
-				return !!document.getClosest(block.key, parent => parent.type === type);
-			});
-
-			if (isList && isType) {
-				editor
-					.setBlocks(this.props.defaultNode)
-					.unwrapBlock("bulleted-list")
-					.unwrapBlock("numbered-list");
-			} else if (isList) {
-				editor
-					.unwrapBlock(
-						type === "bulleted-list" ? "numbered-list" : "bulleted-list"
-					)
-					.wrapBlock(type);
-			} else {
-				editor.setBlocks("list-item").wrapBlock(type);
-			}
-		}
-	};
-
-	// Functions: Checkers
-
-	// Check if the any of the currently selected blocks are of `type`.
-	hasBlock = type => {
-		const { value } = this.state;
-		return value.blocks.some(node => node.type === type);
-	};
-
 	// Store a reference to the `editor`.
 	ref = editor => {
 		this.editor = editor;
@@ -112,70 +62,6 @@ class SlateEditor extends React.Component {
 	// Get the HTML of the Text Editor
 	createMarkup = () => {
 		return { __html: this.editor.el.innerHTML };
-	};
-
-	// Render Helpers
-
-	// Render a block-toggling toolbar button.
-	renderBlockButton = (type, icon) => {
-		let isActive = this.hasBlock(type);
-
-		if (["numbered-list", "bulleted-list"].includes(type)) {
-			const {
-				value: { document, blocks },
-			} = this.state;
-
-			if (blocks.size > 0) {
-				const parent = document.getParent(blocks.first().key);
-				isActive = this.hasBlock("list-item") && parent && parent.type === type;
-			}
-		}
-
-		return (
-			<Button
-				active={isActive}
-				onMouseDown={event => this.onClickBlock(event, type)}
-			>
-				{icon}
-			</Button>
-		);
-	};
-
-	// Render a Slate block
-	renderBlock = (props, editor, next) => {
-		const { attributes, children, node } = props;
-		let align = node.data.get("align");
-		// Reset the align onClick on the currently active button
-		if (!align) {
-			align = "left";
-		}
-
-		switch (node.type) {
-		case "paragraph":
-			return <p {...attributes} style={{ textAlign: this.props.textAlign && `${align}`}}>{children}</p>;
-		case "block-quote":
-			return <blockquote {...attributes} style={{ textAlign: `${align}`}}>{children}</blockquote>;
-		case "bulleted-list":
-			return <ul {...attributes} style={{ listStylePosition: "inside" }}>{children}</ul>;
-		case "heading-one":
-			return <h1 {...attributes} style={{ textAlign: `${align}`}}>{children}</h1>;
-		case "heading-two":
-			return <h2 {...attributes} style={{ textAlign: `${align}`}}>{children}</h2>;
-		case "heading-three":
-			return <h3 {...attributes} style={{ textAlign: `${align}`}}>{children}</h3>;
-		case "heading-four":
-			return <h4 {...attributes} style={{ textAlign: `${align}`}}>{children}</h4>;
-		case "heading-five":
-			return <h5 {...attributes} style={{ textAlign: `${align}`}}>{children}</h5>;
-		case "heading-six":
-			return <h6 {...attributes} style={{ textAlign: `${align}`}}>{children}</h6>;
-		case "list-item":
-			return <li {...attributes} style={{ textAlign: `${align}`}}>{children}</li>;
-		case "numbered-list":
-			return <ol {...attributes} style={{ listStylePosition: "inside" }}>{children}</ol>;
-		default:
-			return next();
-		}
 	};
 
 	// Main Render
@@ -188,7 +74,24 @@ class SlateEditor extends React.Component {
 		const { isAppRendered, value, isDialog, cursorPosition } = this.state;
 
 		// Props Destructuring
-		const { textAlign, link, bold, italic, underline, code } = this.props;
+		const {
+			textAlign,
+			link,
+			bold,
+			italic,
+			underline,
+			code,
+			h1,
+			h2,
+			h3,
+			h4,
+			h5,
+			h6,
+			headings,
+			blockquote,
+			ol,
+			ul,
+		} = this.props;
 
 		return (
 			<>
@@ -216,32 +119,32 @@ class SlateEditor extends React.Component {
 						{code && renderMarkButton(editor, value, "code", "code")}
 
 						{/* H1 */}
-						{this.props.h1 && this.renderBlockButton("heading-one", "looks_one")}
+						{h1 && renderBlockButton(this, "heading-one", "looks_one")}
 
 						{/* H2 */}
-						{this.props.h2 && this.renderBlockButton("heading-two", "looks_two")}
+						{h2 && renderBlockButton(this, "heading-two", "looks_two")}
 
 						{/* H3 */}
-						{this.props.h3 && this.renderBlockButton("heading-three", "looks_3")}
+						{h3 && renderBlockButton(this, "heading-three", "looks_3")}
 						
 						{/* H4 */}
-						{this.props.h4 && this.renderBlockButton("heading-four", "looks_4")}
+						{h4 && renderBlockButton(this, "heading-four", "looks_4")}
 
 						{/* H5 */}
-						{this.props.h5 && this.renderBlockButton("heading-five", "looks_5")}
+						{h5 && renderBlockButton(this, "heading-five", "looks_5")}
 
 						{/* H6 */}
-						{this.props.h5 && this.renderBlockButton("heading-six", "looks_6")}
+						{h6 && renderBlockButton(this, "heading-six", "looks_6")}
 
 						{/* Headings*/}
-						{this.props.headings && (
+						{headings && (
 							<>
-								{this.renderBlockButton("heading-one", "looks_one")}
-								{this.renderBlockButton("heading-two", "looks_two")}
-								{this.renderBlockButton("heading-three", "looks_3")}
-								{this.renderBlockButton("heading-four", "looks_4")}
-								{this.renderBlockButton("heading-five", "looks_5")}
-								{this.renderBlockButton("heading-six", "looks_6")}
+								{renderBlockButton(this, "heading-one", "looks_one")}
+								{renderBlockButton(this, "heading-two", "looks_two")}
+								{renderBlockButton(this, "heading-three", "looks_3")}
+								{renderBlockButton(this, "heading-four", "looks_4")}
+								{renderBlockButton(this, "heading-five", "looks_5")}
+								{renderBlockButton(this, "heading-six", "looks_6")}
 							</>
 						)}
 
@@ -255,13 +158,13 @@ class SlateEditor extends React.Component {
 						}
 
 						{/* Blockquote */}
-						{this.props.blockquote && this.renderBlockButton("block-quote", "format_quote")}
+						{blockquote && renderBlockButton(this, "block-quote", "format_quote")}
 
 						{/* Ordered List */}
-						{this.props.ol && this.renderBlockButton("numbered-list", "format_list_numbered")}
+						{ol && renderBlockButton(this, "numbered-list", "format_list_numbered")}
 
 						{/* Unordered List */}
-						{this.props.ul && this.renderBlockButton("bulleted-list", "format_list_bulleted")}
+						{ul && renderBlockButton(this, "bulleted-list", "format_list_bulleted")}
 
 						{link && renderLinkButton(editor, value, "link")}
 					</Toolbar>
@@ -274,7 +177,7 @@ class SlateEditor extends React.Component {
 						onChange={this.onChange}
 						onKeyDown={(event, editor, next) => onKeyDown(this.props, event, editor, next)}
 						onPaste={(event, editor) => onPasteLink(event, editor, value)}
-						renderBlock={this.renderBlock}
+						renderBlock={(props, next) => renderBlock(this, props, next)}
 						renderMark={(props, next) => renderMark(props, next)}
 						renderInline={(props, next) => renderInline(this, props, next)}
 						style={{ border: "1px solid grey", minHeight: "60px" }}
