@@ -1,7 +1,6 @@
 import React from "react";
 import { Editor } from "slate-react";
 import { Value } from "slate";
-import { isKeyHotkey } from "is-hotkey";
 import PropTypes from "prop-types";
 
 import { initialValue, Button, Toolbar } from "./slate-editor-core";
@@ -9,14 +8,18 @@ import { initialValue, Button, Toolbar } from "./slate-editor-core";
 // TextAlign
 import { hasMultipleAligns, renderAlignButton, renderAlignButtons } from "./slate-editor-formats/text-align";
 
+// Inline
+import renderInline from "./slate-editor-inline";
+
 // Link
 import {
 	onPasteLink,
 	renderLinkDialogWindow,
 	renderLinkButton,
-	Link,
-	setDialogPosition,
-} from "./slate-editor-formats/link";
+} from "./slate-editor-inline/link";
+
+// Mark
+import { onKeyDown, renderMarkButton, renderMark } from "./slate-editor-marks";
 
 class SlateEditor extends React.Component {
 	// Constructor
@@ -46,31 +49,6 @@ class SlateEditor extends React.Component {
 	// On change, save the new `value`.
 	onChange = ({ value }) => {
 		this.setState({ value });
-	};
-
-	// On key down, if it's a formatting command toggle a mark.
-	onKeyDown = (event, editor, next) => {
-		let mark;
-		if (this.props.bold & isKeyHotkey("mod+b")(event)) {
-			mark = "bold";
-		} else if (this.props.italic & isKeyHotkey("mod+i")(event)) {
-			mark = "italic";
-		} else if (this.props.underline & isKeyHotkey("mod+u")(event)) {
-			mark = "underlined";
-		} else if (this.props.code & isKeyHotkey("mod+`")(event)) {
-			mark = "code";
-		} else {
-			return next();
-		}
-
-		event.preventDefault();
-		editor.toggleMark(mark);
-	};
-
-	// When a mark button is clicked, toggle the current mark.
-	onClickMark = (event, type) => {
-		event.preventDefault();
-		this.editor.toggleMark(type);
 	};
 
 	// When a block button is clicked, toggle the block type.
@@ -119,11 +97,6 @@ class SlateEditor extends React.Component {
 	};
 
 	// Functions: Checkers
-	// Check if the current selection has a mark with `type` in it.
-	hasMark = type => {
-		const { value } = this.state;
-		return value.activeMarks.some(mark => mark.type === type);
-	};
 
 	// Check if the any of the currently selected blocks are of `type`.
 	hasBlock = type => {
@@ -142,19 +115,6 @@ class SlateEditor extends React.Component {
 	};
 
 	// Render Helpers
-	// Render a mark-toggling toolbar button.
-	renderMarkButton = (type, icon) => {
-		const isActive = this.hasMark(type);
-
-		return (
-			<Button
-				active={isActive}
-				onMouseDown={event => this.onClickMark(event, type)}
-			>
-				{icon}
-			</Button>
-		);
-	};
 
 	// Render a block-toggling toolbar button.
 	renderBlockButton = (type, icon) => {
@@ -218,52 +178,6 @@ class SlateEditor extends React.Component {
 		}
 	};
 
-	// Render a Slate mark
-	renderMark = (props, editor, next) => {
-		const { children, mark, attributes } = props;
-		switch (mark.type) {
-		case "bold":
-			return <strong {...attributes}>{children}</strong>;
-		case "code":
-			return <code {...attributes}>{children}</code>;
-		case "italic":
-			return <em {...attributes}>{children}</em>;
-		case "underlined":
-			return <u {...attributes}>{children}</u>;
-		default:
-			return next();
-		}
-	};
-
-	/**
-	 * Render a Slate inline.
-	 *
-	 * @param {Object} props
-	 * @param {Editor} editor
-	 * @param {Function} next
-	 * @return {Element}
-	 */
-
-	renderInline = (props, editor, next) => {
-		const { attributes, children, node } = props;
-
-		switch (node.type) {
-		case "link": {
-			return (
-				<Link
-					node={node}
-					attributes={attributes}
-					onClick={event => setDialogPosition(event, this)}
-					children={children}
-				/>
-			);
-		}
-		default: {
-			return next();
-		}
-		}
-	}
-
 	// Main Render
 	render() {
 
@@ -274,7 +188,7 @@ class SlateEditor extends React.Component {
 		const { isAppRendered, value, isDialog, cursorPosition } = this.state;
 
 		// Props Destructuring
-		const { textAlign, link } = this.props;
+		const { textAlign, link, bold, italic, underline, code } = this.props;
 
 		return (
 			<>
@@ -290,16 +204,16 @@ class SlateEditor extends React.Component {
 				>
 					<Toolbar>
 						{/* Bold */}
-						{this.props.bold && this.renderMarkButton("bold", "format_bold")}
+						{bold && renderMarkButton(editor, value, "bold", "format_bold")}
 
 						{/* Italic */}
-						{this.props.italic && this.renderMarkButton("italic", "format_italic")}
+						{italic && renderMarkButton(editor, value, "italic", "format_italic")}
 
 						{/* Underline */}
-						{this.props.underline && this.renderMarkButton("underlined", "format_underlined")}
+						{underline && renderMarkButton(editor, value, "underlined", "format_underlined")}
 
 						{/* Code */}
-						{this.props.code && this.renderMarkButton("code", "code")}
+						{code && renderMarkButton(editor, value, "code", "code")}
 
 						{/* H1 */}
 						{this.props.h1 && this.renderBlockButton("heading-one", "looks_one")}
@@ -358,11 +272,11 @@ class SlateEditor extends React.Component {
 						ref={this.ref}
 						value={this.state.value}
 						onChange={this.onChange}
-						onKeyDown={this.onKeyDown}
+						onKeyDown={(event, editor, next) => onKeyDown(this.props, event, editor, next)}
 						onPaste={(event, editor) => onPasteLink(event, editor, value)}
 						renderBlock={this.renderBlock}
-						renderMark={this.renderMark}
-						renderInline={this.renderInline}
+						renderMark={(props, next) => renderMark(props, next)}
+						renderInline={(props, next) => renderInline(this, props, next)}
 						style={{ border: "1px solid grey", minHeight: "60px" }}
 						onBlur={() => this.setState({ isDialog: !isDialog })}
 					/>
