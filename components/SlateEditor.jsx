@@ -48,7 +48,6 @@ class SlateEditor extends React.Component {
 		});
 	}
 
-	// Functions: Event-Handlers
 	// On change, save the new `value`.
 	onChange = ({ value }) => {
 		this.setState({ value });
@@ -59,12 +58,11 @@ class SlateEditor extends React.Component {
 		this.editor = editor;
 	};
 
-	// Get the HTML of the Text Editor
+	// Get the HTML of the Text Editor.
 	createMarkup = () => {
 		return { __html: this.editor.el.innerHTML };
 	};
 
-	// Main Render
 	render() {
 
 		// Global Context Destructuring
