@@ -6,6 +6,7 @@ import onRemoveLink from "./onRemoveLink";
 /**
  * Render dialog button when clicked on the link.
  *
+ * @param {Editor} editor - A global editor reference, e.g. "this.ditor".
  * @param {State} value - An editor's value/state.
  * @param {State} cursorPosition - A cursor's position state.
  *
@@ -13,7 +14,7 @@ import onRemoveLink from "./onRemoveLink";
  *
  */
 
-function renderLinkDialogWindow(value, cursorPosition) {
+function renderLinkDialogWindow(editor, value, cursorPosition) {
 
 	if (value.inlines.some(inline => inline.type === "link")) {
 		// get url value
@@ -40,8 +41,8 @@ function renderLinkDialogWindow(value, cursorPosition) {
 			}}>
 				<span style={{ maxWidth: "120px"}}>Visit URL: <a href={href}>{href}</a></span>
 				<span>
-					<button onClick={() => onEditLink(this.editor, value)}>Edit</button>
-					<button onClick={() => onRemoveLink(this.editor, value)}>Remove</button>
+					<button onClick={() => onEditLink(editor, value)}>Edit</button>
+					<button onClick={() => onRemoveLink(editor, value)}>Remove</button>
 				</span>
 			</div>
 		);
@@ -50,6 +51,7 @@ function renderLinkDialogWindow(value, cursorPosition) {
 
 renderLinkDialogWindow.propTypes = {
 	editor: PropTypes.object.isRequired,
+	value: PropTypes.object.isRequired,
 	cursorPosition: PropTypes.object.isRequired,
 };
 

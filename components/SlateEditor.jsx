@@ -10,9 +10,13 @@ import { initialValue, Button, Toolbar } from "./slate-editor-core";
 import { hasMultipleAligns, renderAlignButton, renderAlignButtons } from "./slate-editor-formats/text-align";
 
 // Link
-import onPasteLink from "./slate-editor-formats/link/onPasteLink";
-import renderLinkDialogWindow from "./slate-editor-formats/link/renderLinkDialogWindow";
-import renderLinkButton from "./slate-editor-formats/link/renderLinkButton";
+import {
+	onPasteLink,
+	renderLinkDialogWindow,
+	renderLinkButton,
+	Link,
+	setDialogPosition,
+} from "./slate-editor-formats/link";
 
 class SlateEditor extends React.Component {
 	// Constructor
@@ -240,31 +244,18 @@ class SlateEditor extends React.Component {
 	 * @return {Element}
 	 */
 
-	onMouseClick = e => {
-		const el = e.target;
-		const distanceFromTop = el.getBoundingClientRect().top;
-		const distanceFromLeft = el.getBoundingClientRect().left; 
-
-		this.setState({
-			cursorPosition: {
-				x: distanceFromLeft,
-				y: distanceFromTop,
-			},
-			isDialog: true,
-		});
-	}
-
 	renderInline = (props, editor, next) => {
 		const { attributes, children, node } = props;
 
 		switch (node.type) {
 		case "link": {
-			const { data } = node;
-			const href = data.get("href");
 			return (
-				<a {...attributes} href={href} onClick={this.onMouseClick}>
-					{children}
-				</a>
+				<Link
+					node={node}
+					attributes={attributes}
+					onClick={event => setDialogPosition(event, this)}
+					children={children}
+				/>
 			);
 		}
 		default: {
@@ -280,10 +271,10 @@ class SlateEditor extends React.Component {
 		const { editor } = this;
 
 		// State Destructuring
-		const { isAppRendered, value } = this.state;
+		const { isAppRendered, value, isDialog, cursorPosition } = this.state;
 
 		// Props Destructuring
-		const { textAlign } = this.props;
+		const { textAlign, link } = this.props;
 
 		return (
 			<>
@@ -358,7 +349,7 @@ class SlateEditor extends React.Component {
 						{/* Unordered List */}
 						{this.props.ul && this.renderBlockButton("bulleted-list", "format_list_bulleted")}
 
-						{this.props.link && renderLinkButton(this.editor, this.state.value, "link")}
+						{link && renderLinkButton(editor, value, "link")}
 					</Toolbar>
 					<Editor
 						spellCheck
@@ -368,14 +359,14 @@ class SlateEditor extends React.Component {
 						value={this.state.value}
 						onChange={this.onChange}
 						onKeyDown={this.onKeyDown}
-						onPaste={event => onPasteLink(event, this.editor, this.state.value)}
+						onPaste={(event, editor) => onPasteLink(event, editor, value)}
 						renderBlock={this.renderBlock}
 						renderMark={this.renderMark}
 						renderInline={this.renderInline}
 						style={{ border: "1px solid grey", minHeight: "60px" }}
-						onBlur={() => this.setState({ isDialog: !this.state.isDialog })}
+						onBlur={() => this.setState({ isDialog: !isDialog })}
 					/>
-					{this.state.isDialog && renderLinkDialogWindow(value, this.state.cursorPosition)}
+					{isDialog && renderLinkDialogWindow(editor, value, cursorPosition)}
 				</div>
 				<div>
 					<p>State (JSON object):</p>
