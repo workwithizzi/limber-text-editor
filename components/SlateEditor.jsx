@@ -54,11 +54,23 @@ class SlateEditor extends React.Component {
 		this.setState({
 			rendered: true,
 		});
+		// Update the initial content to be pulled from Local Storage if it exists.
+		const existingValue = JSON.parse(localStorage.getItem("content"));
+		this.setState({
+			value: Value.fromJSON(existingValue),
+		});
 	}
 
 	// Functions: Event-Handlers
 	// On change, save the new `value`.
 	onChange = ({ value }) => {
+		// Save the value to Local Storage.
+		// Check to see if the document has changed before saving.
+		if (value.document != this.state.value.document) {
+			const content = JSON.stringify(value.toJSON());
+			localStorage.setItem("content", content);
+		}
+
 		this.setState({ value });
 	};
 
@@ -351,11 +363,6 @@ class SlateEditor extends React.Component {
 		this.editor = editor;
 	};
 
-	// Get the HTML of the Text Editor
-	createMarkup = () => {
-		return { __html: this.editor.el.innerHTML };
-	};
-
 	// Render Helpers
 	// Render a mark-toggling toolbar button.
 	renderMarkButton = (type, icon) => {
@@ -514,113 +521,111 @@ class SlateEditor extends React.Component {
 	render() {
 		return (
 			<>
-				<div
-					style={{
-						maxWidth: "800px",
-						margin: "40px auto",
-						padding: "20px",
-						background: "white",
-						color: "#333",
-						boxShadow: "0px 16px 24px 0px #A9A9A9",
-					}}
-				>
-					<Toolbar>
-						{/* Bold */}
-						{this.props.bold && this.renderMarkButton("bold", "format_bold")}
+				{this.state.rendered &&
+					<>
+						<div
+							style={{
+								maxWidth: "800px",
+								margin: "40px auto",
+								padding: "20px",
+								background: "white",
+								color: "#333",
+								boxShadow: "0px 16px 24px 0px #A9A9A9",
+							}}
+						>
+							<Toolbar>
+								{/* Bold */}
+								{this.props.bold && this.renderMarkButton("bold", "format_bold")}
 
-						{/* Italic */}
-						{this.props.italic && this.renderMarkButton("italic", "format_italic")}
+								{/* Italic */}
+								{this.props.italic && this.renderMarkButton("italic", "format_italic")}
 
-						{/* Underline */}
-						{this.props.underline && this.renderMarkButton("underlined", "format_underlined")}
+								{/* Underline */}
+								{this.props.underline && this.renderMarkButton("underlined", "format_underlined")}
 
-						{/* Code */}
-						{this.props.code && this.renderMarkButton("code", "code")}
+								{/* Code */}
+								{this.props.code && this.renderMarkButton("code", "code")}
 
-						{/* H1 */}
-						{this.props.h1 && this.renderBlockButton("heading-one", "looks_one")}
+								{/* H1 */}
+								{this.props.h1 && this.renderBlockButton("heading-one", "looks_one")}
 
-						{/* H2 */}
-						{this.props.h2 && this.renderBlockButton("heading-two", "looks_two")}
+								{/* H2 */}
+								{this.props.h2 && this.renderBlockButton("heading-two", "looks_two")}
 
-						{/* H3 */}
-						{this.props.h3 && this.renderBlockButton("heading-three", "looks_3")}
+								{/* H3 */}
+								{this.props.h3 && this.renderBlockButton("heading-three", "looks_3")}
 						
-						{/* H4 */}
-						{this.props.h4 && this.renderBlockButton("heading-four", "looks_4")}
+								{/* H4 */}
+								{this.props.h4 && this.renderBlockButton("heading-four", "looks_4")}
 
-						{/* H5 */}
-						{this.props.h5 && this.renderBlockButton("heading-five", "looks_5")}
+								{/* H5 */}
+								{this.props.h5 && this.renderBlockButton("heading-five", "looks_5")}
 
-						{/* H6 */}
-						{this.props.h5 && this.renderBlockButton("heading-six", "looks_6")}
+								{/* H6 */}
+								{this.props.h5 && this.renderBlockButton("heading-six", "looks_6")}
 
-						{/* Headings*/}
-						{this.props.headings && (
-							<>
-								{this.renderBlockButton("heading-one", "looks_one")}
-								{this.renderBlockButton("heading-two", "looks_two")}
-								{this.renderBlockButton("heading-three", "looks_3")}
-								{this.renderBlockButton("heading-four", "looks_4")}
-								{this.renderBlockButton("heading-five", "looks_5")}
-								{this.renderBlockButton("heading-six", "looks_6")}
-							</>
-						)}
+								{/* Headings*/}
+								{this.props.headings && (
+									<>
+										{this.renderBlockButton("heading-one", "looks_one")}
+										{this.renderBlockButton("heading-two", "looks_two")}
+										{this.renderBlockButton("heading-three", "looks_3")}
+										{this.renderBlockButton("heading-four", "looks_4")}
+										{this.renderBlockButton("heading-five", "looks_5")}
+										{this.renderBlockButton("heading-six", "looks_6")}
+									</>
+								)}
 
-						{/* Text-Align */}
-						{this.props.textAlign &&
+								{/* Text-Align */}
+								{this.props.textAlign &&
 							(this.hasMultipleAligns(this.props.textAlign) ?
 								this.renderAlignButtons() :
 								this.renderAlignButton(this.props.textAlign, `format_align_${this.props.textAlign}`))
-						}
+								}
 
-						{/* Blockquote */}
-						{this.props.blockquote && this.renderBlockButton("block-quote", "format_quote")}
+								{/* Blockquote */}
+								{this.props.blockquote && this.renderBlockButton("block-quote", "format_quote")}
 
-						{/* Ordered List */}
-						{this.props.ol && this.renderBlockButton("numbered-list", "format_list_numbered")}
+								{/* Ordered List */}
+								{this.props.ol && this.renderBlockButton("numbered-list", "format_list_numbered")}
 
-						{/* Unordered List */}
-						{this.props.ul && this.renderBlockButton("bulleted-list", "format_list_bulleted")}
+								{/* Unordered List */}
+								{this.props.ul && this.renderBlockButton("bulleted-list", "format_list_bulleted")}
 
-						{this.props.link && this.renderInlineButton("link")}
-					</Toolbar>
-					<Editor
-						spellCheck
-						autoFocus
-						placeholder="Enter some rich text..."
-						ref={this.ref}
-						value={this.state.value}
-						onChange={this.onChange}
-						onKeyDown={this.onKeyDown}
-						onPaste={this.onPaste}
-						renderBlock={this.renderBlock}
-						renderMark={this.renderMark}
-						renderInline={this.renderInline}
-						style={{ border: "1px solid grey", minHeight: "60px" }}
-						onBlur={() => this.setState({ isDialog: !this.state.isDialog })}
-					/>
-					{this.state.isDialog && this.renderDialog()}
-				</div>
-				<div>
-					<p>State (JSON object):</p>
-					<pre
-						style={{
-							background: "#333",
-							color: "white",
-							margin: "30px 5px",
-							padding: "10px",
-						}}
-					>
-						{JSON.stringify(this.state, null, 2)}
-					</pre>
-				</div>
-				{this.state.rendered ? (
-					<>
-						<p>HTML:</p>
-						<div dangerouslySetInnerHTML={this.createMarkup()}></div>
+								{this.props.link && this.renderInlineButton("link")}
+							</Toolbar>
+							<Editor
+								spellCheck
+								autoFocus
+								placeholder="Enter some rich text..."
+								ref={this.ref}
+								value={this.state.value}
+								onChange={this.onChange}
+								onKeyDown={this.onKeyDown}
+								onPaste={this.onPaste}
+								renderBlock={this.renderBlock}
+								renderMark={this.renderMark}
+								renderInline={this.renderInline}
+								style={{ border: "1px solid grey", minHeight: "60px" }}
+								onBlur={() => this.setState({ isDialog: !this.state.isDialog })}
+							/>
+							{this.state.isDialog && this.renderDialog()}
+						</div>
+						<div>
+							<p>State (JSON object):</p>
+							<pre
+								style={{
+									background: "#333",
+									color: "white",
+									margin: "30px 5px",
+									padding: "10px",
+								}}
+							>
+								{JSON.stringify(this.state, null, 2)}
+							</pre>
+						</div>
 					</>
-				) : null}
+				 }
 			</>
 		);
 	}
