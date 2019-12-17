@@ -1,45 +1,37 @@
 import React from "react";
-import { Editor, getEventTransfer } from "slate-react";
-import { KeyUtils, Value } from "slate";
-import { isKeyHotkey } from "is-hotkey";
-import isUrl from "is-url";
+import { Editor } from "slate-react";
+import { Value } from "slate";
 import PropTypes from "prop-types";
 
-import Button from "./Button";
-import Toolbar from "./Toolbar";
+import { initialValue, Toolbar } from "./slate-editor-core";
 
-// Resets Slate's internal key generating function to its default state.
-// See: https://github.com/ianstormtaylor/slate/blob/master/docs/reference/slate/utils.md
-KeyUtils.resetGenerator();
+// TextAlign
+import { hasMultipleAligns, renderAlignButton, renderAlignButtons } from "./slate-editor-formats/text-align";
 
-// Create our initial value...
-const initialValue = Value.fromJSON({
-	document: {
-		nodes: [
-			{
-				object: "block",
-				type: "paragraph",
-				nodes: [
-					{
-						object: "text",
-						text: "A line of placeholder text in a paragraph.",
-					},
-				],
-			},
-		],
-	},
-});
+// Inline
+import renderInline from "./slate-editor-inline";
 
-// The rich text example.
+// Link
+import {
+	onPasteLink,
+	renderLinkDialogWindow,
+	renderLinkButton,
+} from "./slate-editor-inline/link";
+
+// Mark
+import { onKeyDown, renderMarkButton, renderMark } from "./slate-editor-marks";
+
+// Block
+import { renderBlockButton, renderBlock } from "./slate-editor-blocks";
+
 class SlateEditor extends React.Component {
-
 	// Constructor
 	constructor(props) {
 		super(props);
 		this.state = {
 			// Deserialize the initial editor value.
 			value: Value.fromJSON(initialValue),
-			rendered: false,
+			isAppRendered: false,
 			// to store detected X, Y mouse position offset
 			cursorPosition: {
 				x: null,
@@ -47,21 +39,34 @@ class SlateEditor extends React.Component {
 			},
 			isDialog: false,
 		};
+		this.setWrapperRef = this.setWrapperRef.bind(this);
+		this.handleClickOutside = this.handleClickOutside.bind(this);
 	}
 
 	// Side - Effects
 	componentDidMount() {
 		this.setState({
-			rendered: true,
+			isAppRendered: true,
 		});
-		// Update the initial content to be pulled from Local Storage if it exists.
-		const existingValue = JSON.parse(localStorage.getItem("content"));
-		this.setState({
-			value: Value.fromJSON(existingValue),
-		});
+		document.addEventListener("mousedown", this.handleClickOutside);
 	}
 
-	// Functions: Event-Handlers
+	componentWillUnmount() {
+		document.removeEventListener("mousedown", this.handleClickOutside);
+	}
+
+	setWrapperRef(node) {
+		this.wrapperRef = node;
+	}
+
+	handleClickOutside(event) {
+		if (this.wrapperRef && !this.wrapperRef.contains(event.target)) {
+			this.setState({
+				isDialog: false,
+			});
+		}
+	}
+
 	// On change, save the new `value`.
 	onChange = ({ value }) => {
 		// Save the value to Local Storage.
@@ -70,562 +75,160 @@ class SlateEditor extends React.Component {
 			const content = JSON.stringify(value.toJSON());
 			localStorage.setItem("content", content);
 		}
-
+		
 		this.setState({ value });
 	};
-
-	onPaste = (event, editor, next) => {
-		if (editor.value.selection.isCollapsed) return next();
-
-		const transfer = getEventTransfer(event);
-		const { type, text } = transfer;
-		if (type !== "text" && type !== "html") return next();
-		if (!isUrl(text)) return next();
-
-		if (this.hasLinks()) {
-			this.unwrapLink(editor);
-		}
-
-		this.wrapLink(editor, text);
-	};
-
-	// On key down, if it's a formatting command toggle a mark.
-	onKeyDown = (event, editor, next) => {
-		let mark;
-		if (this.props.bold & isKeyHotkey("mod+b")(event)) {
-			mark = "bold";
-		} else if (this.props.italic & isKeyHotkey("mod+i")(event)) {
-			mark = "italic";
-		} else if (this.props.underline & isKeyHotkey("mod+u")(event)) {
-			mark = "underlined";
-		} else if (this.props.code & isKeyHotkey("mod+`")(event)) {
-			mark = "code";
-		} else {
-			return next();
-		}
-
-		event.preventDefault();
-		editor.toggleMark(mark);
-	};
-
-	// When a mark button is clicked, toggle the current mark.
-	onClickMark = (event, type) => {
-		event.preventDefault();
-		this.editor.toggleMark(type);
-	};
-
-	// When a block button is clicked, toggle the block type.
-	onClickBlock = (event, type) => {
-		event.preventDefault();
-
-		const { editor } = this;
-		const { value } = editor;
-		const { document } = value;
-
-		// Handle everything but list buttons.
-		if (type !== "bulleted-list" && type !== "numbered-list") {
-			const isActive = this.hasBlock(type);
-			const isList = this.hasBlock("list-item");
-
-			if (isList) {
-				editor
-					.setBlocks(isActive ? this.props.defaultNode : type)
-					.unwrapBlock("bulleted-list")
-					.unwrapBlock("numbered-list");
-			} else {
-				editor.setBlocks(isActive ? this.props.defaultNode : type);
-			}
-		} else {
-			// Handle the extra wrapping required for list buttons.
-			const isList = this.hasBlock("list-item");
-			const isType = value.blocks.some(block => {
-				return !!document.getClosest(block.key, parent => parent.type === type);
-			});
-
-			if (isList && isType) {
-				editor
-					.setBlocks(this.props.defaultNode)
-					.unwrapBlock("bulleted-list")
-					.unwrapBlock("numbered-list");
-			} else if (isList) {
-				editor
-					.unwrapBlock(
-						type === "bulleted-list" ? "numbered-list" : "bulleted-list"
-					)
-					.wrapBlock(type);
-			} else {
-				editor.setBlocks("list-item").wrapBlock(type);
-			}
-		}
-	};
-
-	// Functions: Checkers
-	// Check if the current selection has a mark with `type` in it.
-	hasMark = type => {
-		const { value } = this.state;
-		return value.activeMarks.some(mark => mark.type === type);
-	};
-
-	// Check if the any of the currently selected blocks are of `type`.
-	hasBlock = type => {
-		const { value } = this.state;
-		return value.blocks.some(node => node.type === type);
-	};
-
-	// Check if the any of the currently selected blocks are of data `align`
-	hasAlign = align => {
-		const { value } = this.state;
-		return value.blocks.some(node => node.data.get("align") === align);
-	}
-
-	/**
-	 * Check whether the current selection has a link in it.
-	 *
-	 * @return {Boolean} hasLinks
-	 */
-
-	hasLinks = () => {
-		const { value } = this.state;
-		return value.inlines.some(inline => inline.type === "link");
-	}
-
-	removeUrl = () => {
-		const { editor } = this;
-		if (this.hasLinks()) {
-			this.unwrapLink(editor);
-		}
-		
-	}
-
-	editLink = () => {
-		const { editor } = this;
-
-		const { value } = this.state;
-		let currentHref = "";
-
-		if (this.hasLinks()) {
-			value.inlines.some(inline => {
-				currentHref = inline.data.get("href");
-			});
-			const href = window.prompt("Enter the URL of the link:", currentHref);
-			editor
-				.setInlines({
-					type: "link",
-					data: { href },
-				});
-			
-		}
-	}
-
-	renderDialog = () => {
-		const { value } = this.state;
-		if (value.inlines.some(inline => inline.type === "link")) {
-			// get url value
-			let href = "";
-			value.inlines.some(inline => {
-				href = inline.data.get("href");
-			});
-
-			// setup the correct top and left distance for the dialog
-			const top = this.state.cursorPosition.y + window.screenTop;
-			const left = this.state.cursorPosition.x;
-
-			// display toaster a bit below the href as at Quill.
-			return (
-				<div style={{
-					display: "flex",
-					flexDirection: "row",
-					justifyContent: "space-between",
-					position: "absolute",
-					top: `${top}px`,
-					left: `${left}px`,
-					backgroundColor: "grey",
-					width: "250px",
-				}}>
-					<span style={{ maxWidth: "120px"}}>Visit URL: <a href={href}>{href}</a></span>
-					<span>
-						<button onClick={this.editLink}>Edit</button>
-						<button onClick={this.removeUrl}>Remove</button>
-					</span>
-				</div>
-			);
-		}
-	}
-
-	/**
- * A change helper to standardize wrapping links.
- *
- * @param {Editor} editor
- * @param {String} href
- */
-
-	wrapLink = (editor, href) => {
-		editor.wrapInline({
-			type: "link",
-			data: { href },
-		});
-
-		editor.moveToEnd();
-	}
-
-	/**
- * A change helper to standardize unwrapping links.
- *
- * @param {Editor} editor
- */
-
-	unwrapLink = (editor) => {
-		editor.unwrapInline("link");
-	}
-
-	onClickAlign = align => {
-
-		const { editor } = this;
-
-		// This is related to the editing state of the block accessed by a key (for example, when we are at the children block right now, but we need to change parent block state, etc)
-		// https://docs.slatejs.org/slate-core/commands#setnodebykey-path
-		// editor.setNodeByKey("4", {
-		// 	data: { align },
-		// });
-
-		if (this.hasAlign(align)) {
-			return editor.setBlocks({
-				data: {},
-			}).focus();
-		}
-		return editor.setBlocks({
-			data: { align },
-		}).focus();
-	}
-
-	/**
-	 * When clicking a link, if the selection has a link in it, remove the link.
-	 * Otherwise, add a new link with an href and text.
-	 *
-	 * @param {Event} event
-	 */
-
-	onClickLink = event => {
-		event.preventDefault();
-
-		const { editor } = this;
-		const { value } = editor;
-		const hasLinks = this.hasLinks();
-
-		if (hasLinks) {
-			this.unwrapLink(editor);
-		} else if (value.selection.isExpanded) {
-			const href = window.prompt("Enter the URL of the link:");
-
-			if (href == null) {
-				return;
-			}
-
-			this.wrapLink(editor, href);
-		} else {
-			const href = window.prompt("Enter the URL of the link:");
-
-			if (href == null) {
-				return;
-			}
-
-			const text = window.prompt("Enter the text for the link:");
-
-			if (text == null) {
-				return;
-			}
-
-			editor
-				.insertText(text)
-				.moveFocusBackward(text.length)
-				.command(this.wrapLink, href);
-		}
-	}
-
-	renderAlignButton = (type, icon) => {
-		const isActive = this.hasAlign(type);
-		return (
-			<Button
-				key={type}
-				active={isActive}
-				onMouseDown={() => this.onClickAlign(type)}
-			>
-				{icon}
-			</Button>
-		);
-	}
-
-	// Check what align options are passed
-	hasMultipleAligns = alignProp => Array.isArray(alignProp);
 
 	// Store a reference to the `editor`.
 	ref = editor => {
 		this.editor = editor;
 	};
 
-	// Render Helpers
-	// Render a mark-toggling toolbar button.
-	renderMarkButton = (type, icon) => {
-		const isActive = this.hasMark(type);
-
-		return (
-			<Button
-				active={isActive}
-				onMouseDown={event => this.onClickMark(event, type)}
-			>
-				{icon}
-			</Button>
-		);
+	// Get the HTML of the Text Editor.
+	createMarkup = () => {
+		return { __html: this.editor.el.innerHTML };
 	};
 
-	// Render a block-toggling toolbar button.
-	renderBlockButton = (type, icon) => {
-		let isActive = this.hasBlock(type);
-
-		if (["numbered-list", "bulleted-list"].includes(type)) {
-			const {
-				value: { document, blocks },
-			} = this.state;
-
-			if (blocks.size > 0) {
-				const parent = document.getParent(blocks.first().key);
-				isActive = this.hasBlock("list-item") && parent && parent.type === type;
-			}
-		}
-
-		return (
-			<Button
-				active={isActive}
-				onMouseDown={event => this.onClickBlock(event, type)}
-			>
-				{icon}
-			</Button>
-		);
-	};
-
-	renderInlineButton = icon => {
-		const isActive = this.hasLinks();
-		return (
-			<Button
-				active={isActive}
-				onMouseDown={this.onClickLink}
-			>
-				{icon}
-			</Button>
-		);
-	}
-
-	// Render a Slate block
-	renderBlock = (props, editor, next) => {
-		const { attributes, children, node } = props;
-		let align = node.data.get("align");
-		// Reset the align onClick on the currently active button
-		if (!align) {
-			align = "left";
-		}
-
-		switch (node.type) {
-		case "paragraph":
-			return <p {...attributes} style={{ textAlign: this.props.textAlign && `${align}`}}>{children}</p>;
-		case "block-quote":
-			return <blockquote {...attributes} style={{ textAlign: `${align}`}}>{children}</blockquote>;
-		case "bulleted-list":
-			return <ul {...attributes} style={{ listStylePosition: "inside" }}>{children}</ul>;
-		case "heading-one":
-			return <h1 {...attributes} style={{ textAlign: `${align}`}}>{children}</h1>;
-		case "heading-two":
-			return <h2 {...attributes} style={{ textAlign: `${align}`}}>{children}</h2>;
-		case "heading-three":
-			return <h3 {...attributes} style={{ textAlign: `${align}`}}>{children}</h3>;
-		case "heading-four":
-			return <h4 {...attributes} style={{ textAlign: `${align}`}}>{children}</h4>;
-		case "heading-five":
-			return <h5 {...attributes} style={{ textAlign: `${align}`}}>{children}</h5>;
-		case "heading-six":
-			return <h6 {...attributes} style={{ textAlign: `${align}`}}>{children}</h6>;
-		case "list-item":
-			return <li {...attributes} style={{ textAlign: `${align}`}}>{children}</li>;
-		case "numbered-list":
-			return <ol {...attributes} style={{ listStylePosition: "inside" }}>{children}</ol>;
-		default:
-			return next();
-		}
-	};
-
-	// Render a Slate mark
-	renderMark = (props, editor, next) => {
-		const { children, mark, attributes } = props;
-		switch (mark.type) {
-		case "bold":
-			return <strong {...attributes}>{children}</strong>;
-		case "code":
-			return <code {...attributes}>{children}</code>;
-		case "italic":
-			return <em {...attributes}>{children}</em>;
-		case "underlined":
-			return <u {...attributes}>{children}</u>;
-		default:
-			return next();
-		}
-	};
-
-	/**
-	 * Render a Slate inline.
-	 *
-	 * @param {Object} props
-	 * @param {Editor} editor
-	 * @param {Function} next
-	 * @return {Element}
-	 */
-
-	onMouseClick = e => {
-		const el = e.target;
-		const distanceFromTop = el.getBoundingClientRect().top;
-		const distanceFromLeft = el.getBoundingClientRect().left; 
-
-		this.setState({
-			cursorPosition: {
-				x: distanceFromLeft,
-				y: distanceFromTop,
-			},
-			isDialog: true,
-		});
-	}
-
-	renderInline = (props, editor, next) => {
-		const { attributes, children, node } = props;
-
-		switch (node.type) {
-		case "link": {
-			const { data } = node;
-			const href = data.get("href");
-			return (
-				<a {...attributes} href={href} onClick={this.onMouseClick}>
-					{children}
-				</a>
-			);
-		}
-		default: {
-			return next();
-		}
-		}
-	}
-
-	renderAlignButtons = () => {
-		return this.props.textAlign.map(align =>
-			this.renderAlignButton(align, `format_align_${align}`)
-		);
-	}
-
-	// Main Render
 	render() {
+
+		// Global Context Destructuring
+		const { editor } = this;
+
+		// State Destructuring
+		const { isAppRendered, value, isDialog, cursorPosition } = this.state;
+
+		// Props Destructuring
+		const {
+			textAlign,
+			link,
+			bold,
+			italic,
+			underline,
+			code,
+			h1,
+			h2,
+			h3,
+			h4,
+			h5,
+			h6,
+			headings,
+			blockquote,
+			ol,
+			ul,
+		} = this.props;
+
 		return (
 			<>
-				{this.state.rendered &&
-					<>
-						<div
-							style={{
-								maxWidth: "800px",
-								margin: "40px auto",
-								padding: "20px",
-								background: "white",
-								color: "#333",
-								boxShadow: "0px 16px 24px 0px #A9A9A9",
-							}}
-						>
-							<Toolbar>
-								{/* Bold */}
-								{this.props.bold && this.renderMarkButton("bold", "format_bold")}
+				<div
+					style={{
+						maxWidth: "800px",
+						margin: "40px auto",
+						padding: "20px",
+						background: "white",
+						color: "#333",
+						boxShadow: "0px 16px 24px 0px #A9A9A9",
+					}}
+				>
+					<Toolbar>
+						{/* Bold */}
+						{bold && renderMarkButton(editor, value, "bold", "format_bold")}
 
-								{/* Italic */}
-								{this.props.italic && this.renderMarkButton("italic", "format_italic")}
+						{/* Italic */}
+						{italic && renderMarkButton(editor, value, "italic", "format_italic")}
 
-								{/* Underline */}
-								{this.props.underline && this.renderMarkButton("underlined", "format_underlined")}
+						{/* Underline */}
+						{underline && renderMarkButton(editor, value, "underlined", "format_underlined")}
 
-								{/* Code */}
-								{this.props.code && this.renderMarkButton("code", "code")}
+						{/* Code */}
+						{code && renderMarkButton(editor, value, "code", "code")}
 
-								{/* H1 */}
-								{this.props.h1 && this.renderBlockButton("heading-one", "looks_one")}
+						{/* H1 */}
+						{h1 && renderBlockButton(this, "heading-one", "looks_one")}
 
-								{/* H2 */}
-								{this.props.h2 && this.renderBlockButton("heading-two", "looks_two")}
+						{/* H2 */}
+						{h2 && renderBlockButton(this, "heading-two", "looks_two")}
 
-								{/* H3 */}
-								{this.props.h3 && this.renderBlockButton("heading-three", "looks_3")}
+						{/* H3 */}
+						{h3 && renderBlockButton(this, "heading-three", "looks_3")}
 						
-								{/* H4 */}
-								{this.props.h4 && this.renderBlockButton("heading-four", "looks_4")}
+						{/* H4 */}
+						{h4 && renderBlockButton(this, "heading-four", "looks_4")}
 
-								{/* H5 */}
-								{this.props.h5 && this.renderBlockButton("heading-five", "looks_5")}
+						{/* H5 */}
+						{h5 && renderBlockButton(this, "heading-five", "looks_5")}
 
-								{/* H6 */}
-								{this.props.h5 && this.renderBlockButton("heading-six", "looks_6")}
+						{/* H6 */}
+						{h6 && renderBlockButton(this, "heading-six", "looks_6")}
 
-								{/* Headings*/}
-								{this.props.headings && (
-									<>
-										{this.renderBlockButton("heading-one", "looks_one")}
-										{this.renderBlockButton("heading-two", "looks_two")}
-										{this.renderBlockButton("heading-three", "looks_3")}
-										{this.renderBlockButton("heading-four", "looks_4")}
-										{this.renderBlockButton("heading-five", "looks_5")}
-										{this.renderBlockButton("heading-six", "looks_6")}
-									</>
-								)}
+						{/* Headings*/}
+						{headings && (
+							<>
+								{renderBlockButton(this, "heading-one", "looks_one")}
+								{renderBlockButton(this, "heading-two", "looks_two")}
+								{renderBlockButton(this, "heading-three", "looks_3")}
+								{renderBlockButton(this, "heading-four", "looks_4")}
+								{renderBlockButton(this, "heading-five", "looks_5")}
+								{renderBlockButton(this, "heading-six", "looks_6")}
+							</>
+						)}
 
-								{/* Text-Align */}
-								{this.props.textAlign &&
-							(this.hasMultipleAligns(this.props.textAlign) ?
-								this.renderAlignButtons() :
-								this.renderAlignButton(this.props.textAlign, `format_align_${this.props.textAlign}`))
-								}
+						{/* Text Align */}
+						{textAlign &&
+							(
+								hasMultipleAligns(textAlign) ?
+									renderAlignButtons(textAlign, value, editor) :
+									renderAlignButton(textAlign, value, `format_align_${textAlign}`, editor)
+							)
+						}
 
-								{/* Blockquote */}
-								{this.props.blockquote && this.renderBlockButton("block-quote", "format_quote")}
+						{/* Blockquote */}
+						{blockquote && renderBlockButton(this, "block-quote", "format_quote")}
 
-								{/* Ordered List */}
-								{this.props.ol && this.renderBlockButton("numbered-list", "format_list_numbered")}
+						{/* Ordered List */}
+						{ol && renderBlockButton(this, "numbered-list", "format_list_numbered")}
 
-								{/* Unordered List */}
-								{this.props.ul && this.renderBlockButton("bulleted-list", "format_list_bulleted")}
+						{/* Unordered List */}
+						{ul && renderBlockButton(this, "bulleted-list", "format_list_bulleted")}
 
-								{this.props.link && this.renderInlineButton("link")}
-							</Toolbar>
-							<Editor
-								spellCheck
-								autoFocus
-								placeholder="Enter some rich text..."
-								ref={this.ref}
-								value={this.state.value}
-								onChange={this.onChange}
-								onKeyDown={this.onKeyDown}
-								onPaste={this.onPaste}
-								renderBlock={this.renderBlock}
-								renderMark={this.renderMark}
-								renderInline={this.renderInline}
-								style={{ border: "1px solid grey", minHeight: "60px" }}
-								onBlur={() => this.setState({ isDialog: !this.state.isDialog })}
-							/>
-							{this.state.isDialog && this.renderDialog()}
-						</div>
-						<div>
-							<p>State (JSON object):</p>
-							<pre
-								style={{
-									background: "#333",
-									color: "white",
-									margin: "30px 5px",
-									padding: "10px",
-								}}
-							>
-								{JSON.stringify(this.state, null, 2)}
-							</pre>
-						</div>
-					</>
-				 }
+						{link && renderLinkButton(editor, value, "link")}
+					</Toolbar>
+					<Editor
+						spellCheck
+						autoFocus
+						placeholder="Enter some rich text..."
+						ref={this.ref}
+						value={this.state.value}
+						onChange={this.onChange}
+						onKeyDown={(event, editor, next) => onKeyDown(this.props, event, editor, next)}
+						onPaste={(event, editor) => onPasteLink(event, editor, value)}
+						renderBlock={(props, next) => renderBlock(this, props, next)}
+						renderMark={(props, next) => renderMark(props, next)}
+						renderInline={(props, next) => renderInline(this, props, next)}
+						style={{ border: "1px solid grey", minHeight: "60px" }}
+					/>
+					{isDialog && renderLinkDialogWindow(this.setWrapperRef, editor, value, cursorPosition)}
+				</div>
+				<div>
+					<p>State (JSON object):</p>
+					<pre
+						style={{
+							background: "#333",
+							color: "white",
+							margin: "30px 5px",
+							padding: "10px",
+						}}
+					>
+						{JSON.stringify(this.state, null, 2)}
+					</pre>
+				</div>
+				{
+					isAppRendered && (
+						<>
+							<p>HTML:</p>
+							<div dangerouslySetInnerHTML={this.createMarkup()}></div>
+						</>
+					)
+				}
 			</>
 		);
 	}
