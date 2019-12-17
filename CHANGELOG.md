@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## Release v0.1.1
+## Release v0.0.1
 
 - Added support for such RTE formats:
 
