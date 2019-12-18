@@ -1,10 +1,7 @@
-// Endpoint: localhost:7777/api/content
+// Endpoint: http://localhost:3000/api/content
 
 import { MongoClient, ObjectId } from "mongodb";
-import { MONGO_URL, DB_NAME } from "env";
-
-const MONGO_OPTIONS = { useNewUrlParser: true, useUnifiedTopology: true };
-const COLLECTION_NAME = "data-content";
+import { MONGO_URL, DB_NAME, MONGO_OPTIONS, COLLECTION_NAME } from "../../env";
 
 // POST data
 async function postData(req, res) {
@@ -23,51 +20,61 @@ async function postData(req, res) {
 
 // UPDATE data
 async function putData(req, res) {
-	const { _id, name, location } = req.body;
+	const { _id, content } = req.body;
 	try {
 		// Establish connection with DB
 		const client = await MongoClient.connect(MONGO_URL, MONGO_OPTIONS);
 		const db = client.db(DB_NAME);
 		// Establish connection with the collection
-		if (name) {
-			const block = await db.collection(COLLECTION_NAME).findOneAndUpdate({ _id: new ObjectId(_id) }, { $set: { name }});
-			return res.status(200).json(block.value._id);
+		if (_id && content) {
+			await db.collection(COLLECTION_NAME).findOneAndUpdate({ _id: new ObjectId(_id) }, { $set: { content }});
+			return res.status(204).json({});
 		}
-		if (location) {
-			const block = await db.collection(COLLECTION_NAME).findOneAndUpdate({ _id: new ObjectId(_id) }, { $set: { location }});
-			return res.status(200).json(block.value._id);
-		}
+		res.status(400).json({ "error": "Wrong data." });
 	} catch (error) {
 		console.error(error);
+		res.status(500).json({ "error": "Something went wrong." });
 	}
 }
 
 async function deleteData(req, res) {
-	const { name, location, _id } = req.query;
+	const { _id } = req.query;
 
 	try {
 		// Establish connection with DB
 		const client = await MongoClient.connect(MONGO_URL, MONGO_OPTIONS);
 		const db = client.db(DB_NAME);
 		// Establish connection with the collection
-		if (name) {
-			await db.collection(COLLECTION_NAME).findOneAndUpdate({ _id: new ObjectId(_id) }, { $unset: { name: ""}});
+		if (_id) {
+			await db.collection(COLLECTION_NAME).findOneAndUpdate({ _id: new ObjectId(_id) }, { $unset: { content: ""}});
 			const block = await db.collection(COLLECTION_NAME).findOne({ _id: new ObjectId(_id) });
 			if (Object.keys(block).length === 1 && Object.keys(block)[0] === "_id") {
 				await db.collection(COLLECTION_NAME).findOneAndDelete({ _id: new ObjectId(_id) });
 			}
-			return res.status(200).json({});
+			return res.status(204).json({});
 		}
-		if (location) {
-			await db.collection(COLLECTION_NAME).findOneAndUpdate({ _id: new ObjectId(_id) }, { $unset: { location: ""}});
-			const block = await db.collection(COLLECTION_NAME).findOne({ _id: new ObjectId(_id) });
-			if (Object.keys(block).length === 1 && Object.keys(block)[0] === "_id") {
-				await db.collection(COLLECTION_NAME).findOneAndDelete({ _id: new ObjectId(_id) });
-			}
-			return res.status(200).json({});
-		}
+		res.status(400).json({ "error": "Wrong data." });
 	} catch (error) {
 		console.error(error);
+		res.status(500).json({ "error": "Something went wrong." });
+	}
+}
+
+async function getData(req, res) {
+	const { _id } = req.query;
+	try {
+		// Establish connection with DB
+		const client = await MongoClient.connect(MONGO_URL, MONGO_OPTIONS);
+		const db = client.db(DB_NAME);
+		// Establish connection with the collection
+		if (_id) {
+			const content = await db.collection(COLLECTION_NAME).findOne({ _id: ObjectId(_id) });
+			return res.status(200).json(content);
+		}
+		res.status(400).json({ "error": "Wrong data." });
+	} catch (error) {
+		console.error(error);
+		res.status(500).json({ "error": "Something went wrong." });
 	}
 }
 
@@ -81,6 +88,9 @@ export default async(req, res) => {
 		break;
 	case "DELETE":
 		await deleteData(req, res);
+		break;
+	case "GET":
+		await getData(req, res);
 		break;
 	default:
 		break;
