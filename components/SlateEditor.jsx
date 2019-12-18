@@ -2,6 +2,7 @@ import React from "react";
 import { Editor } from "slate-react";
 import { Value } from "slate";
 import PropTypes from "prop-types";
+import axios from "axios";
 
 import { initialValue, Toolbar } from "./slate-editor-core";
 
@@ -23,6 +24,9 @@ import { onKeyDown, renderMarkButton, renderMark } from "./slate-editor-marks";
 
 // Block
 import { renderBlockButton, renderBlock } from "./slate-editor-blocks";
+
+// POST and GET url's
+import { POST_URL, GET_URL } from "../env";
 
 class SlateEditor extends React.Component {
 	// Constructor
@@ -48,6 +52,13 @@ class SlateEditor extends React.Component {
 		this.setState({
 			isAppRendered: true,
 		});
+		// Update the initial content to be pulled from Local Storage if it exists.
+		const existingValue = JSON.parse(localStorage.getItem("CONTENT"));
+		if (existingValue) {
+			this.setState({
+				value: Value.fromJSON(existingValue),
+			});
+		}
 		document.addEventListener("mousedown", this.handleClickOutside);
 	}
 
@@ -73,7 +84,7 @@ class SlateEditor extends React.Component {
 		// Check to see if the document has changed before saving.
 		if (value.document != this.state.value.document) {
 			const content = JSON.stringify(value.toJSON());
-			localStorage.setItem("content", content);
+			localStorage.setItem("CONTENT", content);
 		}
 		
 		this.setState({ value });
@@ -88,6 +99,75 @@ class SlateEditor extends React.Component {
 	createMarkup = () => {
 		return { __html: this.editor.el.innerHTML };
 	};
+
+	// DB interactions
+	saveToDB = () => {
+		axios.post(POST_URL, {
+			content: this.state.value,
+		}).then((res) => {
+			localStorage.setItem("CONTENT_ID", res.data);
+			alert("Successfully saved to DB!");
+		}).catch(error => {
+			console.log(error);
+		});
+	}
+
+	loadFromDB = () => {
+		const _id = localStorage.getItem("CONTENT_ID");
+		if (!_id) {
+			alert("You have to save something first.");
+		} else {
+			axios.get(GET_URL, {
+				params: {
+					_id,
+				},
+			}).then(res => {
+				const content = res.data.content;
+				localStorage.setItem("CONTENT", JSON.stringify(content));
+				this.setState({
+					value: Value.fromJSON(content),
+				});
+				alert("Successfully loaded from DB!");
+			}).catch(error => {
+				console.log(error);
+			});
+		}
+	}
+
+	updateToDB = () => {
+		const _id = localStorage.getItem("CONTENT_ID");
+		if (!_id) {
+			alert("You have to save something first.");
+		} else {
+			axios.put(POST_URL, {
+				_id,
+				content: this.state.value,
+			}).then((res) => {
+				alert("Successfully updated to DB!");
+			}).catch(error => {
+				console.log(error);
+			});
+		}
+	}
+
+	deleteFromDB = () => {
+		const _id = localStorage.getItem("CONTENT_ID");
+		if (!_id) {
+			alert("You have to save something first.");
+		} else {
+			axios.delete(POST_URL, {
+				params: {
+					_id,
+				},
+			}).then(() => {
+				localStorage.removeItem("CONTENT");
+				localStorage.removeItem("CONTENT_ID");
+				alert("Successfully deleted from DB!");
+			}).catch(error => {
+				console.log(error);
+			});
+		}
+	}
 
 	render() {
 
@@ -208,6 +288,10 @@ class SlateEditor extends React.Component {
 					/>
 					{isDialog && renderLinkDialogWindow(this.setWrapperRef, editor, value, cursorPosition)}
 				</div>
+				<button onClick={this.saveToDB}>Save to DB</button>
+				<button onClick={this.loadFromDB}>Load from DB</button>
+				<button onClick={this.updateToDB}>Update to DB</button>
+				<button onClick={this.deleteFromDB}>Delete from DB</button>
 				<div>
 					<p>State (JSON object):</p>
 					<pre
