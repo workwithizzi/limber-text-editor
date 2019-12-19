@@ -37,6 +37,7 @@ function Home() {
 				ul: boolean that defines whether Unordered List format should be added.
 				textAlign: array of options ["left", "center", "right"] || single string: "left", "right", "center", that defines whether text-align format should be added.
 				link: boolean that defines whether Link format support should be added.
+				img: boolean that defines whenther Image format support should be added.
 			*/}
 
 			<SlateEditor
@@ -52,6 +53,7 @@ function Home() {
 				// textAlign="right"
 				textAlign={["left", "center", "right" ]}
 				link
+				img
 			/>
 		</>
 	);

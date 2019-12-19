@@ -1,3 +1,4 @@
+import { css } from "emotion";
 import PropTypes from "prop-types";
 
 /**
@@ -13,7 +14,7 @@ import PropTypes from "prop-types";
  */
 
 function renderBlock(ctx, props, next) {
-	const { attributes, children, node } = props;
+	const { attributes, children, node, isFocused } = props;
 	let align = node.data.get("align");
 	// Reset the align onClick on the currently active button
 	if (!align) {
@@ -43,6 +44,21 @@ function renderBlock(ctx, props, next) {
 		return <li {...attributes} style={{ textAlign: `${align}` }}>{children}</li>;
 	case "numbered-list":
 		return <ol {...attributes} style={{ listStylePosition: "inside" }}>{children}</ol>;
+	case "image": {
+		const src = node.data.get("src");
+		return (
+			<img
+				{...attributes}
+				src={src}
+				className={css`
+					display: block;
+					max-width: 100%;
+					max-height: 20em;
+					box-shadow: ${isFocused ? "0 0 0 2px blue;" : "none"};
+				`}
+			/>
+		);
+	}
 	default:
 		return next();
 	}

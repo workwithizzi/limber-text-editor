@@ -3,7 +3,7 @@ import { Editor } from "slate-react";
 import { Value } from "slate";
 import PropTypes from "prop-types";
 
-import { initialValue, Toolbar } from "./slate-editor-core";
+import { initialValue, schema, onPaste, Toolbar } from "./slate-editor-core";
 
 // TextAlign
 import { hasMultipleAligns, renderAlignButton, renderAlignButtons } from "./slate-editor-formats/text-align";
@@ -13,7 +13,6 @@ import renderInline from "./slate-editor-inline";
 
 // Link
 import {
-	onPasteLink,
 	renderLinkDialogWindow,
 	renderLinkButton,
 } from "./slate-editor-inline/link";
@@ -22,7 +21,7 @@ import {
 import { onKeyDown, renderMarkButton, renderMark } from "./slate-editor-marks";
 
 // Block
-import { renderBlockButton, renderBlock } from "./slate-editor-blocks";
+import { renderBlockButton, renderBlock, renderImageButton, onDropImage } from "./slate-editor-blocks";
 
 class SlateEditor extends React.Component {
 	// Constructor
@@ -108,6 +107,7 @@ class SlateEditor extends React.Component {
 			blockquote,
 			ol,
 			ul,
+			img,
 		} = this.props;
 
 		return (
@@ -184,16 +184,21 @@ class SlateEditor extends React.Component {
 						{ul && renderBlockButton(this, "bulleted-list", "format_list_bulleted")}
 
 						{link && renderLinkButton(editor, value, "link")}
+
+						{img && renderImageButton(this, "image", "image")}
+
 					</Toolbar>
 					<Editor
 						spellCheck
 						autoFocus
 						placeholder="Enter some rich text..."
 						ref={this.ref}
+						schema={schema}
 						value={this.state.value}
 						onChange={this.onChange}
+						onDrop={(event, editor, next) => onDropImage(event, editor, next)}
 						onKeyDown={(event, editor, next) => onKeyDown(this.props, event, editor, next)}
-						onPaste={(event, editor) => onPasteLink(event, editor, value)}
+						onPaste={(event, editor, next) => onPaste(event, editor, value, next)}
 						renderBlock={(props, next) => renderBlock(this, props, next)}
 						renderMark={(props, next) => renderMark(props, next)}
 						renderInline={(props, next) => renderInline(this, props, next)}
@@ -245,6 +250,7 @@ SlateEditor.defaultProps = {
 	ul: false,
 	textAlign: null,
 	link: false,
+	img: false,
 };
 
 SlateEditor.propTypes = {
@@ -269,6 +275,7 @@ SlateEditor.propTypes = {
 		PropTypes.string,
 	]),
 	link: PropTypes.bool,
+	img: PropTypes.bool,
 };
 
 export default SlateEditor;
