@@ -81,6 +81,20 @@ class SlateEditor extends React.Component {
 		return { __html: this.editor.el.innerHTML };
 	};
 
+	renderImageUploadController = () => {
+		return (
+			<input name="image" type="file" accept="image/*" onChange={this.handleImageUpload} />
+		);
+	}
+
+	handleImageUpload = () => {
+		const { name, value, files } = event.target;
+		if (name === "image") {
+			console.log(files[0]);
+			console.log(window.URL.createObjectURL(files[0]));
+		}
+	}
+
 	render() {
 
 		// Global Context Destructuring
@@ -186,6 +200,8 @@ class SlateEditor extends React.Component {
 						{link && renderLinkButton(editor, value, "link")}
 
 						{img && renderImageButton(this, "image", "image")}
+
+						{this.renderImageUploadController()}
 
 					</Toolbar>
 					<Editor
