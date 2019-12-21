@@ -23,6 +23,9 @@ import { onKeyDown, renderMarkButton, renderMark } from "./slate-editor-marks";
 // Block
 import { renderBlockButton, renderBlock, renderImageButton, onDropImage } from "./slate-editor-blocks";
 
+
+import insertImage from "./slate-editor-blocks/image/insertImage";
+
 class SlateEditor extends React.Component {
 	// Constructor
 	constructor(props) {
@@ -37,6 +40,7 @@ class SlateEditor extends React.Component {
 				y: null,
 			},
 			isDialog: false,
+			img: "",
 		};
 		this.setWrapperRef = this.setWrapperRef.bind(this);
 		this.handleClickOutside = this.handleClickOutside.bind(this);
@@ -83,15 +87,35 @@ class SlateEditor extends React.Component {
 
 	renderImageUploadController = () => {
 		return (
-			<input name="image" type="file" accept="image/*" onChange={this.handleImageUpload} />
+			<input name="image" type="file" accept="image/*" onChange={this.handleImageUpload} value={this.state.img} />
 		);
 	}
 
 	handleImageUpload = () => {
 		const { name, value, files } = event.target;
-		if (name === "image") {
-			console.log(files[0]);
-			console.log(window.URL.createObjectURL(files[0]));
+		const target = this.editor.findEventRange(event);
+
+		for (const file of files) {
+			const reader = new FileReader();
+			const [mime] = file.type.split("/");
+			if (mime !== "image") continue;
+
+			reader.addEventListener("load", () => {
+				this.editor.command(insertImage, reader.result, target);
+			});
+
+			reader.readAsDataURL(file);
+		}
+
+		if (value) {
+			console.log(files);
+			this.setState({
+				img: value,
+			});
+		} else {
+			this.setState({
+				img: "",
+			});
 		}
 	}
 
