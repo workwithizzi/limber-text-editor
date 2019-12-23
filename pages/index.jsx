@@ -39,8 +39,10 @@ function Home() {
 				link: boolean that defines whether Link format support should be added.
 			*/}
 
+			{/* TODO: structure props as an array */}
+			{/* TODO: restructure folders as a package */}
+
 			<SlateEditor
-				defaultNode="paragraph"
 				bold
 				italic
 				underline
