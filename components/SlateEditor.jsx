@@ -319,6 +319,7 @@ class SlateEditor extends React.Component {
 }
 
 SlateEditor.defaultProps = {
+	defaultNode: "paragraph",
 	// Formats
 	bold: false,
 	italic: false,
