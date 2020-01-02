@@ -13,7 +13,7 @@ function Home() {
 			</Head>
 
 			{/*
-				defaultNode: string that represents the default node type for the editor. Required.
+				defaultNode: string that represents the default node type for the editor. If not set, the default will be set to <p>.
 				bold: boolean that defines whether Bold format support should be added.
 				italic: boolean that defines whether Italic format support should be added.
 				underline: boolean that defines whether Underline format support should be added.
