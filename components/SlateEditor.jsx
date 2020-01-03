@@ -6,24 +6,17 @@ import axios from "axios";
 
 import { initialValue, Toolbar } from "./slate-editor-core";
 
-// TextAlign
-import { hasMultipleAligns, renderAlignButton, renderAlignButtons } from "./slate-editor-formats/text-align";
-
 // Inline
 import renderInline from "./slate-editor-inline";
 
 // Link
-import {
-	onPasteLink,
-	renderLinkDialogWindow,
-	renderLinkButton,
-} from "./slate-editor-inline/link";
+import { onPasteLink, renderLinkDialogWindow } from "./slate-editor-inline/link";
 
 // Mark
-import { onKeyDown, renderMarkButton, renderMark } from "./slate-editor-marks";
+import { onKeyDown, renderMark } from "./slate-editor-marks";
 
 // Block
-import { renderBlockButton, renderBlock } from "./slate-editor-blocks";
+import { renderBlock } from "./slate-editor-blocks";
 
 // POST and GET url's
 import { POST_URL, GET_URL } from "../env";
@@ -42,6 +35,7 @@ class SlateEditor extends React.Component {
 				y: null,
 			},
 			isDialog: false,
+			editorFormats: {},
 		};
 		this.setWrapperRef = this.setWrapperRef.bind(this);
 		this.handleClickOutside = this.handleClickOutside.bind(this);
@@ -60,10 +54,29 @@ class SlateEditor extends React.Component {
 			});
 		}
 		document.addEventListener("mousedown", this.handleClickOutside);
+
+		this.mapFormatsToState(this.props);
 	}
 
 	componentWillUnmount() {
 		document.removeEventListener("mousedown", this.handleClickOutside);
+	}
+
+	mapFormatsToState(props) {
+		// Set formats to state
+		const formats = {};
+		if (props.formats) {
+			this.props.formats.map(item => {
+				if (Object.prototype.hasOwnProperty.call(item, "textAlign")) {
+					formats.textAlign = item.textAlign;
+				} else {
+					formats[item] = true;
+				}
+			});
+			this.setState({
+				editorFormats: formats,
+			});
+		}
 	}
 
 	setWrapperRef(node) {
@@ -178,24 +191,7 @@ class SlateEditor extends React.Component {
 		const { isAppRendered, value, isDialog, cursorPosition } = this.state;
 
 		// Props Destructuring
-		const {
-			textAlign,
-			link,
-			bold,
-			italic,
-			underline,
-			code,
-			h1,
-			h2,
-			h3,
-			h4,
-			h5,
-			h6,
-			headings,
-			blockquote,
-			ol,
-			ul,
-		} = this.props;
+		const { formats } = this.props;
 
 		return (
 			<>
@@ -209,69 +205,19 @@ class SlateEditor extends React.Component {
 						boxShadow: "0px 16px 24px 0px #A9A9A9",
 					}}
 				>
-					<Toolbar>
-						{/* Bold */}
-						{bold && renderMarkButton(editor, value, "bold", "format_bold")}
-
-						{/* Italic */}
-						{italic && renderMarkButton(editor, value, "italic", "format_italic")}
-
-						{/* Underline */}
-						{underline && renderMarkButton(editor, value, "underlined", "format_underlined")}
-
-						{/* Code */}
-						{code && renderMarkButton(editor, value, "code", "code")}
-
-						{/* H1 */}
-						{h1 && renderBlockButton(this, "heading-one", "looks_one")}
-
-						{/* H2 */}
-						{h2 && renderBlockButton(this, "heading-two", "looks_two")}
-
-						{/* H3 */}
-						{h3 && renderBlockButton(this, "heading-three", "looks_3")}
-						
-						{/* H4 */}
-						{h4 && renderBlockButton(this, "heading-four", "looks_4")}
-
-						{/* H5 */}
-						{h5 && renderBlockButton(this, "heading-five", "looks_5")}
-
-						{/* H6 */}
-						{h6 && renderBlockButton(this, "heading-six", "looks_6")}
-
-						{/* Headings*/}
-						{headings && (
-							<>
-								{renderBlockButton(this, "heading-one", "looks_one")}
-								{renderBlockButton(this, "heading-two", "looks_two")}
-								{renderBlockButton(this, "heading-three", "looks_3")}
-								{renderBlockButton(this, "heading-four", "looks_4")}
-								{renderBlockButton(this, "heading-five", "looks_5")}
-								{renderBlockButton(this, "heading-six", "looks_6")}
-							</>
-						)}
-
-						{/* Text Align */}
-						{textAlign &&
-							(
-								hasMultipleAligns(textAlign) ?
-									renderAlignButtons(textAlign, value, editor) :
-									renderAlignButton(textAlign, value, `format_align_${textAlign}`, editor)
-							)
-						}
-
-						{/* Blockquote */}
-						{blockquote && renderBlockButton(this, "block-quote", "format_quote")}
-
-						{/* Ordered List */}
-						{ol && renderBlockButton(this, "numbered-list", "format_list_numbered")}
-
-						{/* Unordered List */}
-						{ul && renderBlockButton(this, "bulleted-list", "format_list_bulleted")}
-
-						{link && renderLinkButton(editor, value, "link")}
-					</Toolbar>
+					{!formats ?
+						<Toolbar
+							ctx={this}
+							value={value}
+							formats={this.props}
+						/>
+						:
+						<Toolbar
+							ctx={this}
+							value={value}
+							formats={this.state.editorFormats}
+						/>
+					}
 					<Editor
 						spellCheck
 						autoFocus
@@ -281,7 +227,7 @@ class SlateEditor extends React.Component {
 						onChange={this.onChange}
 						onKeyDown={(event, editor, next) => onKeyDown(this.props, event, editor, next)}
 						onPaste={(event, editor) => onPasteLink(event, editor, value)}
-						renderBlock={(props, next) => renderBlock(this, props, next)}
+						renderBlock={(props, next) => renderBlock(props, next)}
 						renderMark={(props, next) => renderMark(props, next)}
 						renderInline={(props, next) => renderInline(this, props, next)}
 						style={{ border: "1px solid grey", minHeight: "60px" }}

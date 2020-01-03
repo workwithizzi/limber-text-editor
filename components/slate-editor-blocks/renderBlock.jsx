@@ -4,7 +4,6 @@ import PropTypes from "prop-types";
  *
  * Render a Slate block.
  *
- * @param {Object} ctx - The global context object, e.g. "this".
  * @param {Object} props - The editor's props.
  * @param {Function} next - A function that calls the next function.
  *
@@ -12,7 +11,7 @@ import PropTypes from "prop-types";
  *
  */
 
-function renderBlock(ctx, props, next) {
+function renderBlock(props, next) {
 	const { attributes, children, node } = props;
 	let align = node.data.get("align");
 	// Reset the align onClick on the currently active button
@@ -22,7 +21,7 @@ function renderBlock(ctx, props, next) {
 
 	switch (node.type) {
 	case "paragraph":
-		return <p {...attributes} style={{ textAlign: ctx.props.textAlign && `${align}` }}>{children}</p>;
+		return <p {...attributes} style={{ textAlign: `${align}` }}>{children}</p>;
 	case "block-quote":
 		return <blockquote {...attributes} style={{ textAlign: `${align}`, color: "grey", borderLeft: "3px solid grey", paddingLeft: "15px" }}>{children}</blockquote>;
 	case "bulleted-list":
@@ -49,7 +48,6 @@ function renderBlock(ctx, props, next) {
 }
 
 renderBlock.propTypes = {
-	ctx: PropTypes.object.isRequired,
 	props: PropTypes.object.isRequired,
 	next: PropTypes.func.isRequired,
 };
