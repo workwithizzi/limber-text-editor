@@ -6,7 +6,11 @@ import PropTypes from "prop-types";
 import { initialValue, schema, onPaste, Toolbar } from "./slate-editor-core";
 
 // TextAlign
-import { hasMultipleAligns, renderAlignButton, renderAlignButtons } from "./slate-editor-formats/text-align";
+import {
+	hasMultipleAligns,
+	renderAlignButton,
+	renderAlignButtons,
+} from "./slate-editor-formats/text-align";
 
 // Inline
 import renderInline from "./slate-editor-inline";
@@ -21,11 +25,13 @@ import {
 import { onKeyDown, renderMarkButton, renderMark } from "./slate-editor-marks";
 
 // Block
-import { renderBlockButton, renderBlock, renderImageButton, onDropImage } from "./slate-editor-blocks";
-
-
-import insertImage from "./slate-editor-blocks/image/insertImage";
-
+import {
+	renderBlockButton,
+	renderBlock,
+	renderImageButton,
+	onDropImage,
+	onUploadImage,
+} from "./slate-editor-blocks";
 class SlateEditor extends React.Component {
 	// Constructor
 	constructor(props) {
@@ -40,7 +46,6 @@ class SlateEditor extends React.Component {
 				y: null,
 			},
 			isDialog: false,
-			img: "",
 		};
 		this.setWrapperRef = this.setWrapperRef.bind(this);
 		this.handleClickOutside = this.handleClickOutside.bind(this);
@@ -87,40 +92,16 @@ class SlateEditor extends React.Component {
 
 	renderImageUploadController = () => {
 		return (
-			<input name="image" type="file" accept="image/*" onChange={this.handleImageUpload} value={this.state.img} />
+			<input
+				name="image"
+				type="file"
+				accept="image/*"
+				onChange={() => onUploadImage(this)}
+			/>
 		);
-	}
-
-	handleImageUpload = () => {
-		const { name, value, files } = event.target;
-		const target = this.editor.findEventRange(event);
-
-		for (const file of files) {
-			const reader = new FileReader();
-			const [mime] = file.type.split("/");
-			if (mime !== "image") continue;
-
-			reader.addEventListener("load", () => {
-				this.editor.command(insertImage, reader.result, target);
-			});
-
-			reader.readAsDataURL(file);
-		}
-
-		if (value) {
-			console.log(files);
-			this.setState({
-				img: value,
-			});
-		} else {
-			this.setState({
-				img: "",
-			});
-		}
-	}
+	};
 
 	render() {
-
 		// Global Context Destructuring
 		const { editor } = this;
 
@@ -165,10 +146,17 @@ class SlateEditor extends React.Component {
 						{bold && renderMarkButton(editor, value, "bold", "format_bold")}
 
 						{/* Italic */}
-						{italic && renderMarkButton(editor, value, "italic", "format_italic")}
+						{italic &&
+							renderMarkButton(editor, value, "italic", "format_italic")}
 
 						{/* Underline */}
-						{underline && renderMarkButton(editor, value, "underlined", "format_underlined")}
+						{underline &&
+							renderMarkButton(
+								editor,
+								value,
+								"underlined",
+								"format_underlined"
+							)}
 
 						{/* Code */}
 						{code && renderMarkButton(editor, value, "code", "code")}
@@ -181,7 +169,7 @@ class SlateEditor extends React.Component {
 
 						{/* H3 */}
 						{h3 && renderBlockButton(this, "heading-three", "looks_3")}
-						
+
 						{/* H4 */}
 						{h4 && renderBlockButton(this, "heading-four", "looks_4")}
 
@@ -205,28 +193,32 @@ class SlateEditor extends React.Component {
 
 						{/* Text Align */}
 						{textAlign &&
-							(
-								hasMultipleAligns(textAlign) ?
-									renderAlignButtons(textAlign, value, editor) :
-									renderAlignButton(textAlign, value, `format_align_${textAlign}`, editor)
-							)
-						}
+							(hasMultipleAligns(textAlign)
+								? renderAlignButtons(textAlign, value, editor)
+								: renderAlignButton(
+									textAlign,
+									value,
+									`format_align_${textAlign}`,
+									editor
+								  ))}
 
 						{/* Blockquote */}
-						{blockquote && renderBlockButton(this, "block-quote", "format_quote")}
+						{blockquote &&
+							renderBlockButton(this, "block-quote", "format_quote")}
 
 						{/* Ordered List */}
-						{ol && renderBlockButton(this, "numbered-list", "format_list_numbered")}
+						{ol &&
+							renderBlockButton(this, "numbered-list", "format_list_numbered")}
 
 						{/* Unordered List */}
-						{ul && renderBlockButton(this, "bulleted-list", "format_list_bulleted")}
+						{ul &&
+							renderBlockButton(this, "bulleted-list", "format_list_bulleted")}
 
 						{link && renderLinkButton(editor, value, "link")}
 
 						{img && renderImageButton(this, "image", "image")}
 
 						{this.renderImageUploadController()}
-
 					</Toolbar>
 					<Editor
 						spellCheck
@@ -237,14 +229,24 @@ class SlateEditor extends React.Component {
 						value={this.state.value}
 						onChange={this.onChange}
 						onDrop={(event, editor, next) => onDropImage(event, editor, next)}
-						onKeyDown={(event, editor, next) => onKeyDown(this.props, event, editor, next)}
-						onPaste={(event, editor, next) => onPaste(event, editor, value, next)}
+						onKeyDown={(event, editor, next) =>
+							onKeyDown(this.props, event, editor, next)
+						}
+						onPaste={(event, editor, next) =>
+							onPaste(event, editor, value, next)
+						}
 						renderBlock={(props, next) => renderBlock(this, props, next)}
 						renderMark={(props, next) => renderMark(props, next)}
 						renderInline={(props, next) => renderInline(this, props, next)}
 						style={{ border: "1px solid grey", minHeight: "60px" }}
 					/>
-					{isDialog && renderLinkDialogWindow(this.setWrapperRef, editor, value, cursorPosition)}
+					{isDialog &&
+						renderLinkDialogWindow(
+							this.setWrapperRef,
+							editor,
+							value,
+							cursorPosition
+						)}
 				</div>
 				<div>
 					<p>State (JSON object):</p>
@@ -259,14 +261,12 @@ class SlateEditor extends React.Component {
 						{JSON.stringify(this.state, null, 2)}
 					</pre>
 				</div>
-				{
-					isAppRendered && (
-						<>
-							<p>HTML:</p>
-							<div dangerouslySetInnerHTML={this.createMarkup()}></div>
-						</>
-					)
-				}
+				{isAppRendered && (
+					<>
+						<p>HTML:</p>
+						<div dangerouslySetInnerHTML={this.createMarkup()}></div>
+					</>
+				)}
 			</>
 		);
 	}

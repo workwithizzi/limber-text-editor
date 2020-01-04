@@ -13,8 +13,9 @@ function insertImage(editor, src, target) {
 		editor.select(target);
 	}
 
-	editor.insertBlock({
+	return editor.insertBlock({
 		type: "image",
+		isVoid: true,
 		data: { src },
 	});
 }

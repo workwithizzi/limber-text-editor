@@ -26,22 +26,21 @@ const onDropImage = (event, editor, next) => {
 		for (const file of files) {
 			const reader = new FileReader();
 			const [mime] = file.type.split("/");
-			if (mime !== "image") continue;
+			if (mime === "image") {
+				reader.addEventListener("load", () => {
+					editor.command(insertImage, reader.result, target);
+				});
 
-			reader.addEventListener("load", () => {
-				editor.command(insertImage, reader.result, target);
-			});
-
-			reader.readAsDataURL(file);
+				reader.readAsDataURL(file);
+			}
 		}
-		return;
+		return next();
 	}
 
 	if (type === "text") {
-		if (!isUrl(text)) return next();
-		if (!isImage(text)) return next();
-		editor.command(insertImage, text, target);
-		return;
+		if (!isUrl(text)) return;
+		if (!isImage(text)) return;
+		return editor.command(insertImage, text, target);
 	}
 
 	next();
