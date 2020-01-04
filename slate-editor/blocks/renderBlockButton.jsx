@@ -1,6 +1,6 @@
 import PropTypes from "prop-types";
 
-import { Button } from "../slate-editor-core";
+import { Button } from "../core";
 
 import hasBlock from "./hasBlock";
 import onClickBlock from "./onClickBlock";

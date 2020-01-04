@@ -2,10 +2,10 @@ import React from "react";
 import { cx, css } from "emotion";
 import PropTypes from "prop-types";
 
-import { renderMarkButton } from "../slate-editor-marks";
-import { renderBlockButton } from "../slate-editor-blocks";
-import { hasMultipleAligns, renderAlignButton, renderAlignButtons } from "../slate-editor-formats/text-align";
-import { renderLinkButton } from "../slate-editor-inline/link";
+import { renderMarkButton } from "../marks";
+import { renderBlockButton } from "../blocks";
+import { hasMultipleAligns, renderAlignButton, renderAlignButtons } from "../formats/text-align";
+import { renderLinkButton } from "../inline/link";
 
 /**
  * Editor Toolbar

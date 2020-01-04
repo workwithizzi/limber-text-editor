@@ -6,7 +6,7 @@
 
 import PropTypes from "prop-types";
 
-import { Button } from "../../slate-editor-core";
+import { Button } from "../../core";
 import hasAlign from "./hasAlign";
 import onClickAlign from "./onClickAlign";
 

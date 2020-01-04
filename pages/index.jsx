@@ -1,6 +1,6 @@
 import React from "react";
 import Head from "next/head";
-import SlateEditor from "../components/SlateEditor";
+import SlateEditor from "../slate-editor/SlateEditor";
 
 const EDITOR_FORMATS = [
 	"bold",
@@ -72,28 +72,7 @@ function Home() {
 
 			*/}
 
-			{/* TODO: restructure folders as a package */}
-
-			<SlateEditor
-				// bold
-				// italic
-				// underline
-				// code
-				// h1
-				// h2
-				// h3
-				// h4
-				// h5
-				// h6
-				// headings
-				// blockquote
-				// ol
-				// ul
-				// textAlign="right"
-				// textAlign={["left", "center", "right" ]}
-				// link
-				formats={EDITOR_FORMATS}
-			/>
+			<SlateEditor formats={EDITOR_FORMATS} />
 		</>
 	);
 }
