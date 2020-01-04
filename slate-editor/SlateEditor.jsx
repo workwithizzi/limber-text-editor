@@ -167,10 +167,12 @@ class SlateEditor extends React.Component {
 					/>
 					{isDialog && renderLinkDialogWindow(this.setWrapperRef, editor, value, cursorPosition)}
 				</div>
-				<button onClick={() => save(POST_URL, value)}>Save to DB</button>
-				<button onClick={() => get(this, GET_URL)}>Load from DB</button>
-				<button onClick={() => put(POST_URL, value)}>Update to DB</button>
-				<button onClick={() => remove(POST_URL)}>Delete from DB</button>
+				<div style={{ textAlign: "center" }}>
+					<button onClick={() => save(POST_URL, value)}>Save to DB</button>
+					<button onClick={() => get(this, GET_URL)}>Load from DB</button> 
+					<button onClick={() => put(POST_URL, value)}>Update to DB</button>
+					<button onClick={() => remove(POST_URL)}>Delete from DB</button>
+				</div>
 				<div>
 					<p>State (JSON object):</p>
 					<pre
