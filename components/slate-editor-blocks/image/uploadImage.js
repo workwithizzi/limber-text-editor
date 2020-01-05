@@ -1,5 +1,10 @@
 import PropTypes from "prop-types";
 
+/**
+ * 
+ * @param {Object} files - The files data object.
+ * @returns {Promise} uploadImage.
+ */
 function uploadImage(files) {
 
 	return new Promise((resolve, reject) => {

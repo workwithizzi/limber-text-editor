@@ -4,6 +4,7 @@ import onDropImage from "./onDropImage";
 import renderImageButton from "./renderImageButton";
 import uploadImage from "./uploadImage";
 import onUploadImage from "./onUploadImage";
+import renderImageUploadButton from "./renderImageUploadButton";
 
 export {
 	insertImage,
@@ -12,4 +13,5 @@ export {
 	renderImageButton,
 	uploadImage,
 	onUploadImage,
+	renderImageUploadButton,
 };

@@ -30,8 +30,9 @@ import {
 	renderBlock,
 	renderImageButton,
 	onDropImage,
-	onUploadImage,
+	renderImageUploadButton,
 } from "./slate-editor-blocks";
+
 class SlateEditor extends React.Component {
 	// Constructor
 	constructor(props) {
@@ -88,17 +89,6 @@ class SlateEditor extends React.Component {
 	// Get the HTML of the Text Editor.
 	createMarkup = () => {
 		return { __html: this.editor.el.innerHTML };
-	};
-
-	renderImageUploadController = () => {
-		return (
-			<input
-				name="image"
-				type="file"
-				accept="image/*"
-				onChange={() => onUploadImage(this)}
-			/>
-		);
 	};
 
 	render() {
@@ -216,9 +206,11 @@ class SlateEditor extends React.Component {
 
 						{link && renderLinkButton(editor, value, "link")}
 
-						{img && renderImageButton(this, "image", "image")}
+						{img && (<>
+							{renderImageButton(this, "image", "image")}
+							{renderImageUploadButton(this)}
+						</>)}
 
-						{this.renderImageUploadController()}
 					</Toolbar>
 					<Editor
 						spellCheck
