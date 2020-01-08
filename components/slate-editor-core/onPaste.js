@@ -27,7 +27,7 @@ function onPaste(event, editor, value, next) {
 			const [mime] = file.type.split("/");
 			if (mime !== "image") continue;
 
-			reader.addEventListener("load", () => {
+			reader.addEventListener("loadend", () => {
 				editor.command(insertImage, reader.result, target);
 			});
 
@@ -36,19 +36,19 @@ function onPaste(event, editor, value, next) {
 		return;
 	}
 
+	if (isUrl(text)) {
+		if (editor.value.selection.isCollapsed) return;
+		if (hasLinks(value)) {
+			editor.command(unwrapLink);
+		}
+		editor.command(wrapLink, text);
+		event.preventDefault();
+		return;
+	}
+
 	if (type === "text") {
 		if (!isUrl(text)) return next();
 		if (!isImage(text)) return next();
-
-		if (isUrl(text)) {
-			if (editor.value.selection.isCollapsed) return;
-			if (hasLinks(value)) {
-				editor.command(unwrapLink);
-			}
-			editor.command(wrapLink, text);
-			event.preventDefault();
-			return;
-		}
 
 		if (isImage(text)) {
 			editor.command(insertImage, text, target);
