@@ -2,8 +2,7 @@ import { getEventTransfer } from "slate-react";
 import isUrl from "is-url";
 import PropTypes from "prop-types";
 
-import insertImage from "./insertImage";
-import isImage from "./isImage";
+import { insertImage, readImage, saveImageToFS, isImage } from "./index";
 
 /**
  * On drop, insert the image wherever it is dropped.
@@ -23,24 +22,20 @@ const onDropImage = (event, editor, next) => {
 	const { type, text, files } = transfer;
 
 	if (type === "files") {
-		for (const file of files) {
-			const reader = new FileReader();
-			const [mime] = file.type.split("/");
-			if (mime === "image") {
-				reader.addEventListener("load", () => {
-					editor.command(insertImage, reader.result, target);
-				});
-
-				reader.readAsDataURL(file);
-			}
-		}
+		readImage(files).then(result => {
+			saveImageToFS(result).then(img => {
+				editor.command(insertImage, `/static/${img}`, target);
+			}).catch(error => console.error(error));
+		}).catch(error => console.error(error));
 		return next();
 	}
 
+	// TODO: find an applicable example for this case
 	if (type === "text") {
 		if (!isUrl(text)) return;
 		if (!isImage(text)) return;
-		return editor.command(insertImage, text, target);
+		console.log("The text is an image");
+		editor.command(insertImage, text, target);
 	}
 
 	next();

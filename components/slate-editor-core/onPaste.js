@@ -3,9 +3,7 @@ import isUrl from "is-url";
 import PropTypes from "prop-types";
 
 import { hasLinks, wrapLink, unwrapLink } from "../slate-editor-inline/link";
-
-import insertImage from "../slate-editor-blocks/image/insertImage";
-import isImage from "../slate-editor-blocks/image/isImage";
+import { isImage, insertImage, readImage, saveImageToFS } from "../slate-editor-blocks/image";
 
 /**
  * On paste, if the text is a link, wrap the selection in a link.
@@ -22,18 +20,12 @@ function onPaste(event, editor, value, next) {
 	const { type, text, files } = transfer;
 
 	if (type === "files") {
-		for (const file of files) {
-			const reader = new FileReader();
-			const [mime] = file.type.split("/");
-			if (mime !== "image") continue;
-
-			reader.addEventListener("loadend", () => {
-				editor.command(insertImage, reader.result, target);
-			});
-
-			reader.readAsDataURL(file);
-		}
-		return;
+		readImage(files).then(result => {
+			saveImageToFS(result).then(img => {
+				editor.command(insertImage, `/static/${img}`, target);
+			}).catch(error => console.error(error));
+		}).catch(error => console.error(error));
+		return next();
 	}
 
 	if (isUrl(text)) {
@@ -46,11 +38,13 @@ function onPaste(event, editor, value, next) {
 		return;
 	}
 
+	// TODO: find an applicable example for this case
 	if (type === "text") {
 		if (!isUrl(text)) return next();
 		if (!isImage(text)) return next();
 
 		if (isImage(text)) {
+			console.log("The text is an image");
 			editor.command(insertImage, text, target);
 		}
 		return;

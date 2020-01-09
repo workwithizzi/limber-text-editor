@@ -1,7 +1,6 @@
 import PropTypes from "prop-types";
 
-import uploadImage from "./uploadImage";
-import insertImage from "./insertImage";
+import { readImage, insertImage, saveImageToFS } from "./index";
 
 /**
  * Upload Image and Add it to the Editor's value/state.
@@ -16,8 +15,10 @@ async function onUploadImage(ctx) {
 	const target = editor.findEventRange(event);
 
 	try {
-		const result = await uploadImage(files);
-		editor.command(insertImage, result, target);
+		const result = await readImage(files);
+		const img = await saveImageToFS(result);
+
+		editor.command(insertImage, `/static/${img}`, target);
 	} catch(error) {
 		console.log(error);
 	}

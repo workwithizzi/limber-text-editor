@@ -1,18 +1,19 @@
 import PropTypes from "prop-types";
 
 /**
- * 
+ * Read Image from the File System.
+ *
  * @param {Object} files - The files data object.
- * @returns {Promise} uploadImage.
+ * @returns {Promise} readImage.
  */
-function uploadImage(files) {
+function readImage(files) {
 
 	return new Promise((resolve, reject) => {
 		const reader = new FileReader();
 		const [mime] = files[0].type.split("/");
 		if (mime === "image") {
 			reader.onload = () => {
-				resolve(reader.result);
+				resolve(files[0]);
 			};
 			reader.onerror = reject;
 			reader.readAsDataURL(files[0]);
@@ -21,8 +22,8 @@ function uploadImage(files) {
 	});
 }
 
-uploadImage.propTypes = {
+readImage.propTypes = {
 	files: PropTypes.object.isRequired,
 };
 
-export default uploadImage;
+export default readImage;
