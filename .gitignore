@@ -18,11 +18,10 @@
 # misc
 .DS_Store
 .env*
+env.js
+/public/static/img-[0-9].*
 
 # debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-
-# env
-env.js
