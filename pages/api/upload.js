@@ -1,7 +1,5 @@
 import multer from "multer";
 
-// TODO: add destination as a variable
-
 // Set the destination and filename for the image which will be saved
 const storage = multer.diskStorage({
 	destination: function(req, file, cb) {
