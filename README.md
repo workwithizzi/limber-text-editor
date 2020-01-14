@@ -7,7 +7,7 @@
 ## Install Guide:
 - Clone the repo: `git clone https://github.com/workwithizzi/limber-text-editor.git`
 - Install dependencies: `cd limber-text-editor && yarn`
-- Add `env.js` file.
+- Add `env.js` file
 - Run the app in development mode: `yarn dev`
 
 ## Release History
