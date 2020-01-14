@@ -1,9 +1,11 @@
 import multer from "multer";
 
+// TODO: add destination as a variable
+
 // Set the destination and filename for the image which will be saved
 const storage = multer.diskStorage({
 	destination: function(req, file, cb) {
-		cb(null, "public/static");
+		cb(null, process.env.PATH_LOCAL_IMAGE);
 	},
 	filename: function(req, file, cb) {
 		cb(null, file.fieldname + "-" + Date.now() + "." + file.mimetype.split("/")[1]);

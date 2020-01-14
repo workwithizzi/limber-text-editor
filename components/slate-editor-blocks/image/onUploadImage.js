@@ -18,7 +18,7 @@ async function onUploadImage(ctx) {
 		const result = await readImage(files);
 		const img = await saveImageToFS(result);
 
-		editor.command(insertImage, `/static/${img}`, target);
+		editor.command(insertImage, `${process.env.STATIC}/${img}`, target);
 	} catch(error) {
 		console.log(error);
 	}

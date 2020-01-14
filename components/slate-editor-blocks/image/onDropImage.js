@@ -24,7 +24,7 @@ const onDropImage = (event, editor, next) => {
 	if (type === "files") {
 		readImage(files).then(result => {
 			saveImageToFS(result).then(img => {
-				editor.command(insertImage, `/static/${img}`, target);
+				editor.command(insertImage, `${process.env.STATIC}/${img}`, target);
 			}).catch(error => console.error(error));
 		}).catch(error => console.error(error));
 		return next();
