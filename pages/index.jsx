@@ -1,6 +1,19 @@
 import React from "react";
 import Head from "next/head";
-import SlateEditor from "../components/SlateEditor";
+import SlateEditor from "../slate-editor/SlateEditor";
+
+const EDITOR_FORMATS = [
+	"bold",
+	"italic",
+	"underline",
+	"code",
+	"headings",
+	"blockquote",
+	"ol",
+	"ul",
+	{ textAlign: ["left", "center", "right"] },
+	"link",
+];
 
 function Home() {
 	return (
@@ -13,7 +26,7 @@ function Home() {
 			</Head>
 
 			{/*
-				defaultNode: string that represents the default node type for the editor. Required.
+				defaultNode: string that represents the default node type for the editor. If not set, the default will be set to <p>.
 				bold: boolean that defines whether Bold format support should be added.
 				italic: boolean that defines whether Italic format support should be added.
 				underline: boolean that defines whether Underline format support should be added.
@@ -37,22 +50,29 @@ function Home() {
 				ul: boolean that defines whether Unordered List format should be added.
 				textAlign: array of options ["left", "center", "right"] || single string: "left", "right", "center", that defines whether text-align format should be added.
 				link: boolean that defines whether Link format support should be added.
+
+				The props may be passed separately, like so:
+
+				<SlateEditor
+					bold
+					italic
+					underline
+					code
+					headings
+					blockquote
+					ol
+					ul
+					textAlign={["left", "center", "right" ]}
+					link
+				/>
+
+				or as an array of props:
+
+				<SlateEditor formats={EDITOR_FORMATS} />
+
 			*/}
 
-			<SlateEditor
-				defaultNode="paragraph"
-				bold
-				italic
-				underline
-				code
-				headings
-				blockquote
-				ol
-				ul
-				// textAlign="right"
-				textAlign={["left", "center", "right" ]}
-				link
-			/>
+			<SlateEditor formats={EDITOR_FORMATS} />
 		</>
 	);
 }
