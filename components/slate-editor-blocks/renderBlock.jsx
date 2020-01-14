@@ -55,6 +55,8 @@ function renderBlock(ctx, props, next) {
 					max-width: 100%;
 					max-height: 20em;
 					box-shadow: ${isFocused ? "0 0 0 2px blue;" : "none"};
+					margin-left: ${align === "left" ? "0px" : "auto"};
+					margin-right: ${align === "right" ? "0px" : "auto"}
 				`}
 			/>
 		);
