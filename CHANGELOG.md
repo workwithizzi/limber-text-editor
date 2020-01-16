@@ -36,3 +36,8 @@
     - Two.
 
   - [link](path/to/somewhere)
+
+## Release v0.0.2
+
+- Added ability to upload and align images.
+- Added CRUD interactions with DB.
