@@ -4,7 +4,6 @@ import PropTypes from "prop-types";
  * Check whether the current selection has a link in it.
  *
  * @param {State} value - the editor's value/state.
- *
  * @returns {Boolean} hasLinks.
  */
 

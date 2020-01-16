@@ -1,3 +1,5 @@
+// Endpoint: http://localhost:3000/api/upload
+
 import multer from "multer";
 
 // Set the destination and filename for the image which will be saved

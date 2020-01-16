@@ -11,9 +11,7 @@ import onClickLink from "./onClickLink";
  * @param {Editor} editor - A global editor reference, e.g. "this.editor".
  * @param {State} value - An editor's value/state.
  * @param {String} icon - An icon name from the "material-icons".
- *
  * @returns {DOM_element} Toolbar Link Button.
- *
  */
 
 function renderLinkButton(editor, value, icon) {

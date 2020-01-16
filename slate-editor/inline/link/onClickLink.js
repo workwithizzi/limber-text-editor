@@ -11,7 +11,6 @@ import wrapLink from "./wrapLink";
  * @param {Event} event - Any DOM action.
  * @param {Edito} editor - A global editor reference, e.g. "this.editor".
  * @param {State} value - An editor's value/state.
- *
  */
 
 function onClickLink(event, editor, value) {

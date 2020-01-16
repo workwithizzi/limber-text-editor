@@ -4,7 +4,6 @@ import PropTypes from "prop-types";
  * Check whether align options is array.
  * 
  * @param {prop} textAlign - textAlign prop from the parent component.
- * 
  * @returns {Boolean} hasMultipleAligns.
  */
 

@@ -2,14 +2,11 @@ import { css } from "emotion";
 import PropTypes from "prop-types";
 
 /**
- *
  * Render a Slate block.
  *
  * @param {Object} props - The editor's props.
  * @param {Function} next - A function that calls the next function.
- *
  * @returns {Element} Block.
- *
  */
 
 function renderBlock(props, next) {

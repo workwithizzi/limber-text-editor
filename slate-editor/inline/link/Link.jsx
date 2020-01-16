@@ -7,9 +7,7 @@ import PropTypes from "prop-types";
  * @param {Props} attributes - "props.attributes" that passed from the Editor main class.
  * @param {Function} onClick - A function that detects the correct position for DialogWindow rendering.
  * @param {React_element} children - A content, that coming into the <a />.
- *
  * @returns {DOM_element} <a />.
- *
  */
 
 const Link = ({ node, attributes, onClick, children }) => {

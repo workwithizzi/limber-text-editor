@@ -2,15 +2,12 @@ import { isKeyHotkey } from "is-hotkey";
 import PropTypes from "prop-types";
 
 /**
- *
  * On key down, if it's a formatting command toggle a mark.
  *
  * @param {Event} event - Any DOM action.
  * @param {Editor} editor - A global editor reference, e.g. "this.editor".
  * @param {Function} next - A function that calls the next() chaining function.
- *
  * @returns {String} mark.
- *
  */
 
 function onKeyDown(props, event, editor, next) {

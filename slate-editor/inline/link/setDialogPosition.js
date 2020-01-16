@@ -5,7 +5,6 @@ import PropTypes from "prop-types";
  *
  * @param {Event} event - Any event passed from the parent component.
  * @param {Context} ctx - A global context object, e.g. "this".
- *
  */
 
 function setDialogPosition(event, ctx) {

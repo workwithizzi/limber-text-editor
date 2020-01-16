@@ -7,7 +7,6 @@ import hasLinks from "./hasLinks";
  *
  * @param {Editor} editor - A global editor reference, e.g. "this.editor".
  * @param {State} value - An editor's value/state.
- *
  */
 
 function onEditLink(editor, value) {

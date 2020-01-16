@@ -18,6 +18,7 @@ import { renderImageButton, renderImageUploadButton } from "../blocks/image";
  *
  * @returns {element} Toolbar.
  */
+
 function Toolbar({ className, ctx, value, formats }) {
 
 	const { editor } = ctx;

@@ -4,7 +4,7 @@
 
 > The Rich Text Editor built on top of [React](https://reactjs.org/) and [Slate](https://www.slatejs.org/).
 
-## Install Guide:
+## Install Guide
 - Clone the repo: `git clone https://github.com/workwithizzi/limber-text-editor.git`
 - Install dependencies: `cd limber-text-editor && yarn`
 - Add `env.js` file

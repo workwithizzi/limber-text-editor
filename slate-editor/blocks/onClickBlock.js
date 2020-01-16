@@ -3,13 +3,11 @@ import PropTypes from "prop-types";
 import hasBlock from "./hasBlock";
 
 /**
- *
  * When a block button is clicked, toggle the block type.
  *
  * @param {Event} event - Any dom action.
  * @param {Object} ctx - The global context from main class, e.g. "this".
  * @param {String} type - A string that defines the type of the block, e.g. "numbered-list", "bulleted-list".
- *
  */
 
 function onClickBlock(event, ctx, type) {

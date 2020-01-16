@@ -5,12 +5,11 @@ import { hasBlock } from "../../blocks";
 
 /**
  * Check if the any of the currently selected blocks are of data "align".
+ *
  * @param {node} align - a string value to compare with one in the the editor's value/state.
  * @param {state} value - the editor's value/state.
  * @param {ref} editor - the global editor reference.
- * 
  * @returns {state} onClickAlign.
- * 
  */
 
 const	onClickAlign = (align, value, editor) => {

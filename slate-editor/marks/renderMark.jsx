@@ -1,14 +1,11 @@
 import PropTypes from "prop-types";
 
 /**
- *
  * Render a Slate mark.
  *
  * @param {Object} props
  * @param {Function} next - The function that calls the next function.
- *
  * @return {Element} DOM element.
- *
  */
 
 function renderMark(props, next) {

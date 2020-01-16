@@ -4,7 +4,6 @@ import PropTypes from "prop-types";
  * Get the extension of the URL, using the URL API.
  *
  * @param {String} url - An image url.
- *
  * @return {String} Image Extension.
  */
 

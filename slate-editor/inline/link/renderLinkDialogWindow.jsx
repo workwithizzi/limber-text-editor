@@ -10,9 +10,7 @@ import onRemoveLink from "./onRemoveLink";
  * @param {Editor} editor - A global editor reference, e.g. "this.ditor".
  * @param {State} value - An editor's value/state.
  * @param {State} cursorPosition - A cursor's position state.
- *
  * @returns {DOM_element} <div />
- *
  */
 
 function renderLinkDialogWindow(setWrapperRef, editor, value, cursorPosition) {

@@ -1,17 +1,16 @@
 // Endpoint: http://localhost:3000/api/content
 
 import { MongoClient, ObjectId } from "mongodb";
-import { MONGO_URL, DB_NAME, MONGO_OPTIONS, COLLECTION_NAME } from "../../env";
 
 // POST data
 async function postData(req, res) {
 	const { content } = req.body;
 	try {
 		// Establish connection with DB
-		const client = await MongoClient.connect(MONGO_URL, MONGO_OPTIONS);
-		const db = client.db(DB_NAME);
+		const client = await MongoClient.connect(process.env.MONGO_URL, process.env.MONGO_OPTIONS);
+		const db = client.db(process.env.DB_NAME);
 		// Establish connection with the collection
-		const contentBlock = await db.collection(COLLECTION_NAME).insertOne({ content });
+		const contentBlock = await db.collection(process.env.COLLECTION_NAME).insertOne({ content });
 		res.status(201).json(contentBlock.insertedId);
 	} catch (error) {
 		console.error(error);
@@ -23,11 +22,11 @@ async function putData(req, res) {
 	const { _id, content } = req.body;
 	try {
 		// Establish connection with DB
-		const client = await MongoClient.connect(MONGO_URL, MONGO_OPTIONS);
-		const db = client.db(DB_NAME);
+		const client = await MongoClient.connect(process.env.MONGO_URL, process.env.MONGO_OPTIONS);
+		const db = client.db(process.env.DB_NAME);
 		// Establish connection with the collection
 		if (_id && content) {
-			await db.collection(COLLECTION_NAME).findOneAndUpdate({ _id: new ObjectId(_id) }, { $set: { content }});
+			await db.collection(process.env.COLLECTION_NAME).findOneAndUpdate({ _id: new ObjectId(_id) }, { $set: { content }});
 			return res.status(204).json({});
 		}
 		res.status(400).json({ "error": "Wrong data." });
@@ -42,14 +41,14 @@ async function deleteData(req, res) {
 
 	try {
 		// Establish connection with DB
-		const client = await MongoClient.connect(MONGO_URL, MONGO_OPTIONS);
-		const db = client.db(DB_NAME);
+		const client = await MongoClient.connect(process.env.MONGO_URL, process.env.MONGO_OPTIONS);
+		const db = client.db(process.env.DB_NAME);
 		// Establish connection with the collection
 		if (_id) {
-			await db.collection(COLLECTION_NAME).findOneAndUpdate({ _id: new ObjectId(_id) }, { $unset: { content: ""}});
-			const block = await db.collection(COLLECTION_NAME).findOne({ _id: new ObjectId(_id) });
+			await db.collection(process.env.COLLECTION_NAME).findOneAndUpdate({ _id: new ObjectId(_id) }, { $unset: { content: ""}});
+			const block = await db.collection(process.env.COLLECTION_NAME).findOne({ _id: new ObjectId(_id) });
 			if (Object.keys(block).length === 1 && Object.keys(block)[0] === "_id") {
-				await db.collection(COLLECTION_NAME).findOneAndDelete({ _id: new ObjectId(_id) });
+				await db.collection(process.env.COLLECTION_NAME).findOneAndDelete({ _id: new ObjectId(_id) });
 			}
 			return res.status(204).json({});
 		}
@@ -64,11 +63,11 @@ async function getData(req, res) {
 	const { _id } = req.query;
 	try {
 		// Establish connection with DB
-		const client = await MongoClient.connect(MONGO_URL, MONGO_OPTIONS);
-		const db = client.db(DB_NAME);
+		const client = await MongoClient.connect(process.env.MONGO_URL, process.env.MONGO_OPTIONS);
+		const db = client.db(process.env.DB_NAME);
 		// Establish connection with the collection
 		if (_id) {
-			const content = await db.collection(COLLECTION_NAME).findOne({ _id: ObjectId(_id) });
+			const content = await db.collection(process.env.COLLECTION_NAME).findOne({ _id: ObjectId(_id) });
 			return res.status(200).json(content);
 		}
 		res.status(400).json({ "error": "Wrong data." });

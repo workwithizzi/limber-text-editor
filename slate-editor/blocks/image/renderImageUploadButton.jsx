@@ -6,7 +6,6 @@ import onUploadImage from "./onUploadImage";
  * Render input controller to upload image.
  *
  * @param {Object} ctx - The global context object, "this".
- *
  * @returns {Element} renderImageUploadButton.
  */
 

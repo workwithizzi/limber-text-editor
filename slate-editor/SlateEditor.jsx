@@ -17,9 +17,6 @@ import { onKeyDown, renderMark } from "./marks";
 // Block
 import { renderBlock, onDropImage } from "./blocks";
 
-// POST and GET url's
-import { POST_URL, GET_URL } from "../env";
-
 // DB interactions
 import { save, get, put, remove } from "../db";
 
@@ -179,10 +176,10 @@ class SlateEditor extends React.Component {
 						)}
 				</div>
 				<div style={{ textAlign: "center" }}>
-					<button onClick={() => save(POST_URL, value)}>Save to DB</button>
-					<button onClick={() => get(this, GET_URL)}>Load from DB</button> 
-					<button onClick={() => put(POST_URL, value)}>Update to DB</button>
-					<button onClick={() => remove(POST_URL)}>Delete from DB</button>
+					<button onClick={() => save(process.env.POST_URL, value)}>Save to DB</button>
+					<button onClick={() => get(this, process.env.GET_URL)}>Load from DB</button> 
+					<button onClick={() => put(process.env.POST_URL, value)}>Update to DB</button>
+					<button onClick={() => remove(process.env.POST_URL)}>Delete from DB</button>
 				</div>
 				<div>
 					<p>State (JSON object):</p>
