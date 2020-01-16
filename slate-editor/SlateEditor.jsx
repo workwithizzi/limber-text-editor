@@ -3,19 +3,19 @@ import { Editor } from "slate-react";
 import { Value } from "slate";
 import PropTypes from "prop-types";
 
-import { initialValue, Toolbar } from "./core";
+import { initialValue, Toolbar, schema, onPaste } from "./core";
 
 // Inline
 import renderInline from "./inline";
 
 // Link
-import { onPasteLink, renderLinkDialogWindow } from "./inline/link";
+import { renderLinkDialogWindow } from "./inline/link";
 
 // Mark
 import { onKeyDown, renderMark } from "./marks";
 
 // Block
-import { renderBlock } from "./blocks";
+import { renderBlock, onDropImage } from "./blocks";
 
 // POST and GET url's
 import { POST_URL, GET_URL } from "../env";
@@ -116,7 +116,6 @@ class SlateEditor extends React.Component {
 	};
 
 	render() {
-
 		// Global Context Destructuring
 		const { editor } = this;
 
@@ -156,16 +155,28 @@ class SlateEditor extends React.Component {
 						autoFocus
 						placeholder="Enter some rich text..."
 						ref={this.ref}
+						schema={schema}
 						value={this.state.value}
 						onChange={this.onChange}
-						onKeyDown={(event, editor, next) => onKeyDown(this.props, event, editor, next)}
-						onPaste={(event, editor) => onPasteLink(event, editor, value)}
 						renderBlock={(props, next) => renderBlock(props, next)}
+						onDrop={(event, editor, next) => onDropImage(event, editor, next)}
+						onKeyDown={(event, editor, next) =>
+							onKeyDown(this.props, event, editor, next)
+						}
+						onPaste={(event, editor, next) =>
+							onPaste(event, editor, value, next)
+						}
 						renderMark={(props, next) => renderMark(props, next)}
 						renderInline={(props, next) => renderInline(this, props, next)}
 						style={{ border: "1px solid grey", minHeight: "60px" }}
 					/>
-					{isDialog && renderLinkDialogWindow(this.setWrapperRef, editor, value, cursorPosition)}
+					{isDialog &&
+						renderLinkDialogWindow(
+							this.setWrapperRef,
+							editor,
+							value,
+							cursorPosition
+						)}
 				</div>
 				<div style={{ textAlign: "center" }}>
 					<button onClick={() => save(POST_URL, value)}>Save to DB</button>
@@ -186,14 +197,12 @@ class SlateEditor extends React.Component {
 						{JSON.stringify(this.state, null, 2)}
 					</pre>
 				</div>
-				{
-					isAppRendered && (
-						<>
-							<p>HTML:</p>
-							<div dangerouslySetInnerHTML={this.createMarkup()}></div>
-						</>
-					)
-				}
+				{isAppRendered && (
+					<>
+						<p>HTML:</p>
+						<div dangerouslySetInnerHTML={this.createMarkup()}></div>
+					</>
+				)}
 			</>
 		);
 	}
@@ -218,6 +227,7 @@ SlateEditor.defaultProps = {
 	ul: false,
 	textAlign: null,
 	link: false,
+	img: false,
 	formats: null,
 };
 
@@ -244,6 +254,7 @@ SlateEditor.propTypes = {
 	]),
 	link: PropTypes.bool,
 	formats: PropTypes.array,
+	img: PropTypes.bool,
 };
 
 export default SlateEditor;

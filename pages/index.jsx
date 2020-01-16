@@ -13,6 +13,7 @@ const EDITOR_FORMATS = [
 	"ul",
 	{ textAlign: ["left", "center", "right"] },
 	"link",
+	"img",
 ];
 
 function Home() {

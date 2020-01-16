@@ -6,6 +6,7 @@ import { renderMarkButton } from "../marks";
 import { renderBlockButton } from "../blocks";
 import { hasMultipleAligns, renderAlignButton, renderAlignButtons } from "../formats/text-align";
 import { renderLinkButton } from "../inline/link";
+import { renderImageButton, renderImageUploadButton } from "../blocks/image";
 
 /**
  * Editor Toolbar
@@ -38,6 +39,7 @@ function Toolbar({ className, ctx, value, formats }) {
 		ol,
 		ul,
 		link,
+		img,
 	} = formats;
 
 	return (
@@ -123,6 +125,11 @@ function Toolbar({ className, ctx, value, formats }) {
 			{ul && renderBlockButton(ctx, "bulleted-list", "format_list_bulleted")}
 
 			{link && renderLinkButton(editor, value, "link")}
+
+			{img && (<>
+				{renderImageButton(ctx, "image", "image")}
+				{renderImageUploadButton(ctx)}
+			</>)}
 
 		</div>
 	);
